@@ -1,0 +1,21 @@
+Member and User (Inheritance)
+Student and Parent (Many-to-Many)
+Student and Class (Many-to-Many)
+Staff and Class (Many-to-Many)
+Class and Subject (Many-to-Many)
+Student and Attendance (One-to-Many)
+Staff and Attendance (One-to-Many)
+Student and Grade (One-to-Many)
+Staff and Subject (Many-to-Many)
+Exam and Class (Many-to-Many)
+Exam and Subject (Many-to-Many)
+Exam and Result (One-to-One)
+
+
+
+Started initial process 44549 from /home/goldenskull/.local/share/lutris/runners/wine/lutris-fshack-7.2-x86_64/bin/wine /media/goldenskull/diskd1/Downloads/Days Gone - [DODI Repack]/Setup.exe
+Start monitoring process.
+fsync: up and running.
+
+
+

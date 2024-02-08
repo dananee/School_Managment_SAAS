@@ -1,0 +1,134 @@
+from base64 import urlsafe_b64decode
+from django.shortcuts import render
+from rest_framework.generics import ListCreateAPIView
+from rest_framework.views import APIView
+from rest_framework_simplejwt.views import TokenObtainPairView
+from school_managment.permissions import IsStaffOrAdminUser
+from .serialization import  CustomTokenObtainPairSerializer, PasswordResetConfirmSerializer, PasswordResetSerializer, PersonSerializer, ScheduleClassSerializer,SchoolDataSerializer,ClassSerializer, SchoolMembersSerializer, TeacherSerializer, SubjectSerializer, ClassRoomSerializer
+from .models import ClassSchedule, Person, SchoolDataModel,Class, SchoolMembers, Teacher, Subject, ClassRoom
+from rest_framework import viewsets
+from rest_framework import status
+from rest_framework.response import Response
+from django.contrib.auth.tokens import default_token_generator
+from django.utils.encoding import force_bytes
+from django.utils.http import urlsafe_base64_encode
+from rest_framework import generics, status
+from django.utils.http import urlsafe_base64_encode
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
+
+class SchoolDataView(viewsets.ModelViewSet):
+
+    queryset = SchoolDataModel.objects.all()
+    serializer_class = SchoolDataSerializer
+
+
+class ClassViewSet(viewsets.ModelViewSet):
+    queryset = Class.objects.all()
+    serializer_class = ClassSerializer
+
+class TeacherViewSet(viewsets.ModelViewSet):
+    queryset = Teacher.objects.all()
+    serializer_class = TeacherSerializer
+    permission_classes = [IsStaffOrAdminUser]
+
+class SubjectViewSet(viewsets.ModelViewSet):
+    queryset = Subject.objects.all()
+    serializer_class = SubjectSerializer
+
+class ClassRoomViewSet(viewsets.ModelViewSet):
+    queryset = ClassRoom.objects.all()
+    serializer_class = ClassRoomSerializer 
+    
+
+class PersonViewSet(viewsets.ViewSet):
+    def create(self, request):
+        serializer = PersonSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def retrieve(self, request, pk=None):
+        try:
+            person = Person.objects.get(pk=pk)
+            serializer = PersonSerializer(person)
+            return Response(serializer.data)
+        except Person.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+    def update(self, request, pk=None):
+        try:
+            person = Person.objects.get(pk=pk)
+            serializer = PersonSerializer(person, data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Person.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+    def destroy(self, request, pk=None):
+        try:
+            person = Person.objects.get(pk=pk)
+            person.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except Person.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+    
+
+class SchoolMembersViewSet(viewsets.ModelViewSet):
+    queryset = SchoolMembers.objects.all()
+    serializer_class = SchoolMembersSerializer
+
+class ScheduleClassesViewSet(viewsets.ModelViewSet):
+    queryset = ClassSchedule.objects.all()
+    serializer_class = ScheduleClassSerializer
+
+
+
+class MyTokenObtainPairView(TokenObtainPairView):
+    serializer_class = CustomTokenObtainPairSerializer
+
+
+
+class PasswordResetView(generics.GenericAPIView):
+    serializer_class = PasswordResetSerializer
+
+    def post(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        email = serializer.validated_data['email']
+        user = Person.objects.filter(email=email).first()
+        if user:
+            uid = urlsafe_base64_encode(force_bytes(user.pk))
+            token = default_token_generator.make_token(user)
+            reset_url = f"http://127.0.0.1:8000/password/reset/confirm/{uid}/{token}/"
+            # Create and send password reset email
+            subject = 'Password reset'
+            message = render_to_string('password_reset_email.html', {
+                'reset_url': reset_url,
+            })
+            send_mail(subject, message, 'from@example.com', [email])
+            return Response({'detail': 'Password reset email has been sent.'}, status=status.HTTP_200_OK)
+        else:
+            return Response({'error': 'No user found with this email.'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class PasswordResetConfirmView(generics.GenericAPIView):
+    serializer_class = PasswordResetConfirmSerializer
+
+    def post(self, request, uidb64, token):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            uid = urlsafe_b64decode(uidb64).decode()
+            user = Person.objects.get(pk=uid)
+        except (TypeError, ValueError, OverflowError, Person.DoesNotExist):
+            user = None
+        if user and default_token_generator.check_token(user, token):
+            user.set_password(serializer.validated_data['password'])
+            user.save()
+            return Response({'detail': 'Password has been reset successfully.'}, status=status.HTTP_200_OK)
+        else:
+            return Response({'error': 'Invalid token.'}, status=status.HTTP_400_BAD_REQUEST)
