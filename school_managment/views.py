@@ -4,7 +4,7 @@ from rest_framework.generics import ListCreateAPIView
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
 from school_managment.permissions import IsStaffOrAdminUser
-from .serialization import CustomTokenObtainPairSerializer, PasswordResetConfirmSerializer, PasswordResetSerializer, PersonSerializer, ScheduleClassSerializer, SchoolDataSerializer, ClassSerializer, SchoolMembersSerializer, TeacherSerializer, SubjectSerializer, ClassRoomSerializer
+from .serialization import CustomTokenObtainPairSerializer,   PersonSerializer, ScheduleClassSerializer, SchoolDataSerializer, ClassSerializer, SchoolMembersSerializer, TeacherSerializer, SubjectSerializer, ClassRoomSerializer
 from .models import ClassSchedule, Person, SchoolDataModel, Class, SchoolMembers, Teacher, Subject, ClassRoom
 from rest_framework import viewsets
 from rest_framework import status
@@ -129,43 +129,4 @@ class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
 
 
-class PasswordResetView(generics.GenericAPIView):
-    serializer_class = PasswordResetSerializer
-
-    def post(self, request):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        email = serializer.validated_data['email']
-        user = Person.objects.filter(email=email).first()
-        if user:
-            uid = urlsafe_base64_encode(force_bytes(user.pk))
-            token = default_token_generator.make_token(user)
-            reset_url = f"http://127.0.0.1:8000/password/reset/confirm/{uid}/{token}/"
-            # Create and send password reset email
-            subject = 'Password reset'
-            message = render_to_string('password_reset_email.html', {
-                'reset_url': reset_url,
-            })
-            send_mail(subject, message, 'from@example.com', [email])
-            return Response({'detail': 'Password reset email has been sent.'}, status=status.HTTP_200_OK)
-        else:
-            return Response({'error': 'No user found with this email.'}, status=status.HTTP_400_BAD_REQUEST)
-
-
-class PasswordResetConfirmView(generics.GenericAPIView):
-    serializer_class = PasswordResetConfirmSerializer
-
-    def post(self, request, uidb64, token):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        try:
-            uid = urlsafe_b64decode(uidb64).decode()
-            user = Person.objects.get(pk=uid)
-        except (TypeError, ValueError, OverflowError, Person.DoesNotExist):
-            user = None
-        if user and default_token_generator.check_token(user, token):
-            user.set_password(serializer.validated_data['password'])
-            user.save()
-            return Response({'detail': 'Password has been reset successfully.'}, status=status.HTTP_200_OK)
-        else:
-            return Response({'error': 'Invalid token.'}, status=status.HTTP_400_BAD_REQUEST)
+ 

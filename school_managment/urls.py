@@ -1,8 +1,7 @@
 from django.urls import path, include
 
- 
 
-from .views import ClassRoomViewSet, ClassViewSet, MyTokenObtainPairView, PasswordResetConfirmView, PasswordResetView, PersonViewSet, ScheduleClassesViewSet, SchoolDataView, SchoolMembersViewSet, SubjectViewSet, TeacherViewSet
+from .views import ClassRoomViewSet, ClassViewSet, MyTokenObtainPairView,  PersonViewSet, ScheduleClassesViewSet, SchoolDataView, SchoolMembersViewSet, SubjectViewSet, TeacherViewSet
 
 
 from rest_framework import routers
@@ -21,8 +20,8 @@ router.register(r'class_schedule', ScheduleClassesViewSet)
 
 urlpatterns = [
     path('login/', MyTokenObtainPairView.as_view(), name='token_obtain_pair'),
-   path('password/reset/', PasswordResetView.as_view(), name='password_reset'),
-    path('password/reset/confirm/<uidb64>/<token>/', PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
+
+
     path("", include(router.urls)),
 
 ]

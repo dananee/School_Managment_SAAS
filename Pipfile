@@ -36,6 +36,7 @@ mysqlclient = "*"
 pillow = "*"
 django-mysql = "*"
 timedelta = "*"
+drf-yasg = "*"
 
 [dev-packages]
 

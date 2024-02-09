@@ -31,8 +31,12 @@ DEBUG = True
 ALLOWED_HOSTS = []
 
 CSRF_TRUSTED_ORIGINS = ["http://127.0.0.1:8000"]
-EMAIL_HOST = 'localhost'
-EMAIL_PORT = 587
+# EMAIL CONFIG
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "smtp.gmail.com"
+EMAIL_PORT = "587"
+EMAIL_HOST_USER = "dananeabdjalil2@gmail.com"
+EMAIL_HOST_PASSWORD = "iubd hmzq zjri fnbr "
 EMAIL_USE_TLS = True
 
 
@@ -50,6 +54,7 @@ INSTALLED_APPS = [
     'school_managment',
     'djoser',
     'corsheaders',
+    'drf_yasg'
 
 ]
 
@@ -160,6 +165,16 @@ TIME_INPUT_FORMATS = [
 
 
 AUTH_USER_MODEL = 'school_managment.Person'
+AUTHENTICATION_BACKENDS = [
+    'school_managment.authentication.PersonAuthenticationBackend',
+    'django.contrib.auth.backends.ModelBackend',  # Default backend
+]
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ],
+}
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
@@ -173,14 +188,14 @@ SIMPLE_JWT = {
     'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
 }
 
-
-AUTHENTICATION_BACKENDS = [
-    'school_managment.authentication.PersonAuthenticationBackend',
-    'django.contrib.auth.backends.ModelBackend',  # Default backend
-]
-
-REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-    ],
+DJOSER = {
+    'PASSWORD_RESET_CONFIRM_URL': '#/password/reset/confirm/{uid}/{token}',
+    'USERNAME_RESET_CONFIRM_URL': '#/username/reset/confirm/{uid}/{token}',
+    'ACTIVATION_URL': '#/activate/{uid}/{token}',
+    'SEND_ACTIVATION_EMAIL': True,
+    'SERIALIZERS': {
+    "user_create": "school_managment.serialization.PersonSerializer",
+    "user": "school_managment.serialization.PersonSerializer",
+    "current_user": "school_managment.serialization.PersonSerializer"
+  },
 }

@@ -21,7 +21,7 @@ class PersonSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Person
-        fields = ['email', 'password', 'first_name', 'last_name', 'phone', 'profile_image', 'gender']
+        fields = ['id','email', 'password', 'first_name', 'last_name', 'phone', 'profile_image', 'gender']
         extra_kwargs = {
             'profile_image': {'required': False},  # Allow profile image to be optional
         }
@@ -33,6 +33,7 @@ class PersonSerializer(serializers.ModelSerializer):
 
 class SchoolMembersSerializer(serializers.ModelSerializer):
     person  = PersonSerializer()
+    
     class Meta:
         model = SchoolMembers
         # Add other fields as needed
@@ -97,10 +98,3 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         return token
     
 
-class PasswordResetSerializer(serializers.Serializer):
-    email = serializers.EmailField()
-
-
-class PasswordResetConfirmSerializer(serializers.Serializer):
-    password = serializers.CharField()
-    password_confirm = serializers.CharField()
