@@ -6,6 +6,7 @@ from django.contrib.auth.models import AbstractUser, BaseUserManager, AbstractBa
 from django.contrib.auth.models import Permission, Group
 from django.contrib.auth.hashers import make_password
 
+
 def upload_to(instance, filename):
     return f'images/{filename}'
 
@@ -56,7 +57,7 @@ class PersonManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
         if not email:
             raise ValueError('The Email field must be set')
-        
+
         email = self.normalize_email(email)
         user = self.model(email=email, **extra_fields)
         if password:
@@ -70,7 +71,6 @@ class PersonManager(BaseUserManager):
             password=password
         )
 
-        
         user.is_superuser = True
         user.is_admin = True
         user.is_staff = True
@@ -89,9 +89,9 @@ class Person(AbstractBaseUser):
         max_length=1, choices=Genders, default=Genders.MEN)
     email = models.EmailField(unique=True)
 
-    is_active = models.BooleanField(default=True)
+    is_active = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)  # Add is_staff field
-    is_superuser = models.BooleanField(default=False) 
+    is_superuser = models.BooleanField(default=False)
 
     objects = PersonManager()
     USERNAME_FIELD = 'email'
@@ -309,7 +309,3 @@ class ClassSchedule(models.Model):
 
     def __str__(self):
         return f"{self.day} | {self.start_time} - {self.end_time} | Room: {self.class_room}"
-
-
-
-

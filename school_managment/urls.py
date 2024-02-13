@@ -1,7 +1,7 @@
 from django.urls import path, include
 
 
-from .views import ClassRoomViewSet, ClassViewSet, MyTokenObtainPairView,  PersonViewSet, ScheduleClassesViewSet, SchoolDataView, SchoolMembersViewSet, SubjectViewSet, TeacherViewSet
+from .views import ClassRoomViewSet, ClassViewSet, MyTokenObtainPairView,  PersonViewSet, ScheduleClassesViewSet, SchoolDataView, SchoolMembersViewSet, SubjectViewSet, TeacherViewSet, password_reset_confirm
 
 
 from rest_framework import routers
@@ -20,7 +20,7 @@ router.register(r'class_schedule', ScheduleClassesViewSet)
 
 urlpatterns = [
     path('login/', MyTokenObtainPairView.as_view(), name='token_obtain_pair'),
-
+    
 
     path("", include(router.urls)),
 

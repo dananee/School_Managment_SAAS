@@ -1,5 +1,6 @@
 from base64 import urlsafe_b64decode
-from django.shortcuts import render
+from django.http import Http404, HttpResponseBadRequest
+from django.shortcuts import get_object_or_404, redirect, render
 from rest_framework.generics import ListCreateAPIView
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
@@ -18,6 +19,14 @@ from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from djoser import views as djoser_views
+from django.utils.http import base36_to_int
+
+
+
+
+
+
 
 
 class SchoolDataView(viewsets.ModelViewSet):
@@ -129,4 +138,32 @@ class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
 
 
- 
+def password_reset_confirm(request, uidb64, token):
+    try:
+        uid = base36_to_int(uidb64)
+        user = get_object_or_404(Person, pk=uidb64)
+    except ValueError:
+        raise Http404("Invalid user ID")
+    except Person.DoesNotExist:
+        raise Http404("Person not found")
+
+    if default_token_generator.check_token(user, token):
+        if request.method == 'POST':
+            new_password = request.POST.get('new_password')
+            serializer = djoser_views.PasswordResetConfirmSerializer(data={
+                'uid': uidb64,
+                'token': token,
+                'new_password': new_password
+            })
+            if serializer.is_valid():
+                serializer.save()
+                # Redirect to a success page or display a success message
+                return redirect('password_reset_success')
+            else:
+                # Handle invalid serializer data (e.g., new password does not meet requirements)
+                # You may render the confirmation page again with error messages
+                return render(request, 'password_reset.html', {'uidb64': uidb64, 'token': token, 'errors': serializer.errors})
+        else:
+            return render(request, 'password_reset.html', {'uidb64': uidb64, 'token': token})
+    else:
+        raise Http404("Invalid password reset link.")

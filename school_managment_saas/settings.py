@@ -17,7 +17,7 @@ import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
+PROJECT_PATH = os.path.realpath(os.path.dirname(__file__))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
@@ -75,7 +75,7 @@ ROOT_URLCONF = 'school_managment_saas.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-       'DIRS': [BASE_DIR, 'templates/',],
+
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -163,7 +163,6 @@ TIME_INPUT_FORMATS = [
     '%m/%d/%y']             # '10/25/06'
 
 
-
 AUTH_USER_MODEL = 'school_managment.Person'
 AUTHENTICATION_BACKENDS = [
     'school_managment.authentication.PersonAuthenticationBackend',
@@ -177,25 +176,31 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=15),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
     'USER_ID_FIELD': 'email',  # or any other unique field for your user model
     'ALGORITHM': 'HS256',
     # Change this to a strong, unique secret key
     'SIGNING_KEY': get_random_secret_key(),
-    'AUTH_HEADER_TYPES': ('Bearer',),
+    'AUTH_HEADER_TYPES': ('JWT',),
 
     'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
 }
 
 DJOSER = {
-    'PASSWORD_RESET_CONFIRM_URL': '#/password/reset/confirm/{uid}/{token}',
-    'USERNAME_RESET_CONFIRM_URL': '#/username/reset/confirm/{uid}/{token}',
-    'ACTIVATION_URL': '#/activate/{uid}/{token}',
+    'USER_ID_FIELD': 'id',
+    'PASSWORD_RESET_CONFIRM_URL': 'auth/reset-password/?uid={uid}&token={token}',
+    'USERNAME_RESET_CONFIRM_URL': 'username/reset/confirm/?uid={uid}&token={token}',
+    'ACTIVATION_URL': 'auth/activate/?uid={uid}&token={token}',
     'SEND_ACTIVATION_EMAIL': True,
+    'SEND_CONFIRMATION_EMAIL': True,
+    'PASSWORD_CHANGED_EMAIL_CONFIRMATION': True,
+    'SET_PASSWORD_RETYPE': True,
+    'PASSWORD_RESET_SHOW_EMAIL_NOT_FOUND': True,
     'SERIALIZERS': {
-    "user_create": "school_managment.serialization.PersonSerializer",
-    "user": "school_managment.serialization.PersonSerializer",
-    "current_user": "school_managment.serialization.PersonSerializer"
-  },
+        "user_create": "school_managment.serialization.PersonSerializer",
+        "user": "school_managment.serialization.PersonSerializer",
+        "current_user": "school_managment.serialization.PersonSerializer",
+        'password_reset_confirm': 'djoser.serializers.PasswordResetConfirmSerializer',
+    },
 }

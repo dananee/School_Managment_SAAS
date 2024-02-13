@@ -4,6 +4,7 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 
 class SchoolDataSerializer(serializers.ModelSerializer):
+    education_stage = serializers.ListField(child=serializers.CharField())
 
     class Meta:
         model = SchoolDataModel
@@ -21,7 +22,7 @@ class PersonSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Person
-        fields = ['id','email', 'password', 'first_name', 'last_name', 'phone', 'profile_image', 'gender']
+        fields = "__all__"
         extra_kwargs = {
             'profile_image': {'required': False},  # Allow profile image to be optional
         }
