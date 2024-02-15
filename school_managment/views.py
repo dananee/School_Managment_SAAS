@@ -5,7 +5,7 @@ from rest_framework.generics import ListCreateAPIView
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
 from school_managment.permissions import IsStaffOrAdminUser
-from .serialization import CustomTokenObtainPairSerializer,   PersonSerializer, ScheduleClassSerializer, SchoolDataSerializer, ClassSerializer, SchoolMembersSerializer, TeacherSerializer, SubjectSerializer, ClassRoomSerializer
+from .serialization import CustomPasswordResetConfirmSerializer, CustomTokenObtainPairSerializer,   PersonSerializer, ScheduleClassSerializer, SchoolDataSerializer, ClassSerializer, SchoolMembersSerializer, TeacherSerializer, SubjectSerializer, ClassRoomSerializer
 from .models import ClassSchedule, Person, SchoolDataModel, Class, SchoolMembers, Teacher, Subject, ClassRoom
 from rest_framework import viewsets
 from rest_framework import status
@@ -21,12 +21,10 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from djoser import views as djoser_views
 from django.utils.http import base36_to_int
-
-
-
-
-
-
+from djoser.serializers import PasswordResetConfirmSerializer
+# from djoser.views import PasswordResetConfirmView as DjoserPasswordResetConfirmView
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.encoding import force_bytes, force_str
 
 
 class SchoolDataView(viewsets.ModelViewSet):
@@ -83,11 +81,10 @@ class PersonViewSet(viewsets.ViewSet):
             ]
 
     def list(self, request):
-        if request.user.is_superuser:
-            queryset = Person.objects.all()
-            serializer = PersonSerializer(queryset, many=True)
-            return Response(serializer.data)
-        return Response(status=status.HTTP_403_FORBIDDEN)
+
+        queryset = Person.objects.all()
+        serializer = PersonSerializer(queryset, many=True)
+        return Response(serializer.data)
 
     def create(self, request):
         serializer = PersonSerializer(data=request.data)
@@ -125,8 +122,40 @@ class PersonViewSet(viewsets.ViewSet):
 
 
 class SchoolMembersViewSet(viewsets.ModelViewSet):
+
+    permission_classes_by_action = {
+        "default": [IsAuthenticated],
+        "retrieve": [IsAuthenticated, IsAdminUser],
+        'list': [IsAdminUser],
+        'create': [IsAdminUser],
+        'update': [IsAdminUser],
+        'partial_update': [IsAdminUser],
+        'destroy': [IsAdminUser, ]
+    }
+
+    def get_permissions(self):
+        try:
+            # return permission_classes depending on `action`
+            return [
+                permission()
+                for permission in self.permission_classes_by_action[self.action]
+            ]
+        except KeyError:
+            # action is not set return default permission_classes
+            return [
+                permission()
+                for permission in self.permission_classes_by_action["default"]
+            ]
+
     queryset = SchoolMembers.objects.all()
     serializer_class = SchoolMembersSerializer
+
+    def list(self, request):
+        school_id = request.data.get('school_id')
+        queryset = SchoolMembers.objects.filter(school=school_id)
+
+        serializer = SchoolMembersSerializer(queryset, many=True)
+        return Response(serializer.data)
 
 
 class ScheduleClassesViewSet(viewsets.ModelViewSet):
@@ -138,32 +167,59 @@ class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
 
 
+class CustomPasswordResetConfirmView(viewsets.ViewSet):
+    serializer_class = CustomPasswordResetConfirmSerializer
+
+    def create(self, request):
+        print("éééééééééééééééééééé")
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            self.perform_update(serializer)
+            return Response({"detail": "Password has been reset"}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
 def password_reset_confirm(request, uidb64, token):
     try:
-        uid = base36_to_int(uidb64)
-        user = get_object_or_404(Person, pk=uidb64)
-    except ValueError:
+        uid = force_str(urlsafe_base64_decode(uidb64))
+        user = get_object_or_404(Person, pk=uid)
+    except (ValueError, Http404):
         raise Http404("Invalid user ID")
-    except Person.DoesNotExist:
-        raise Http404("Person not found")
 
     if default_token_generator.check_token(user, token):
         if request.method == 'POST':
             new_password = request.POST.get('new_password')
-            serializer = djoser_views.PasswordResetConfirmSerializer(data={
-                'uid': uidb64,
-                'token': token,
-                'new_password': new_password
-            })
-            if serializer.is_valid():
-                serializer.save()
+            re_new_password = request.POST.get('re_new_password')
+            if new_password != "":
+                # Update the user's password
+                user.set_password(new_password)
+
+                user.save()
                 # Redirect to a success page or display a success message
-                return redirect('password_reset_success')
+                return render(request, 'password_reset_success.html')
             else:
-                # Handle invalid serializer data (e.g., new password does not meet requirements)
-                # You may render the confirmation page again with error messages
-                return render(request, 'password_reset.html', {'uidb64': uidb64, 'token': token, 'errors': serializer.errors})
+                print(f"Error {new_password} - {re_new_password}")
+                # Passwords do not match, render the password reset form with an error
+                return render(request, 'password_reset.html', {'uidb64': uidb64, 'token': token, 'error_message': "Passwords do not match"})
         else:
             return render(request, 'password_reset.html', {'uidb64': uidb64, 'token': token})
+    else:
+        raise Http404("Invalid password reset link.")
+
+
+def activation_email_account(request, uidb64, token):
+    print(f"*********  - {uidb64} ************")
+    try:
+        uid = force_str(urlsafe_base64_decode(uidb64))
+        user = get_object_or_404(Person, pk=uid)
+    except (ValueError, Http404):
+        raise Http404("Invalid user ID")
+
+    if default_token_generator.check_token(user, token):
+        user.is_active = True
+        user.save()
+        # Redirect to a success page or display a success message
+        return render(request, 'confirmation.html')
+
     else:
         raise Http404("Invalid password reset link.")

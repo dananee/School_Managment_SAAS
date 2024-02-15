@@ -1,7 +1,7 @@
 from django.urls import path, include
 
 
-from .views import ClassRoomViewSet, ClassViewSet, MyTokenObtainPairView,  PersonViewSet, ScheduleClassesViewSet, SchoolDataView, SchoolMembersViewSet, SubjectViewSet, TeacherViewSet, password_reset_confirm
+from .views import ClassRoomViewSet, ClassViewSet, MyTokenObtainPairView,  PersonViewSet, ScheduleClassesViewSet, SchoolDataView, SchoolMembersViewSet, SubjectViewSet, TeacherViewSet
 
 
 from rest_framework import routers

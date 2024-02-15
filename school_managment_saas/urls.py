@@ -23,7 +23,7 @@ from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 
-from school_managment.views import  password_reset_confirm
+from school_managment.views import password_reset_confirm, activation_email_account
 
 schema_view = get_schema_view(
     openapi.Info(
@@ -36,6 +36,11 @@ schema_view = get_schema_view(
     public=True,
     permission_classes=(permissions.AllowAny,),
 )
+# from rest_framework import routers
+
+# router = routers.DefaultRouter()
+# router.register(r'reset-password', CustomPasswordResetConfirmView,basename="password_reset_confirm")
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -48,7 +53,9 @@ urlpatterns = [
 
     path('auth/', include('djoser.urls')),
     path('auth/', include('djoser.urls.jwt')),
- 
-    path('password/reset/confirm/<id>/<token>/',
+    # path("auth/", include(router.urls)),
+    path('auth/reset-password/<uidb64>/<token>',
          password_reset_confirm, name='password_reset_confirm'),
+    path('auth/activate/<uidb64>/<token>',
+         activation_email_account, name='activation_email_account'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

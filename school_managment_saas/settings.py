@@ -181,17 +181,17 @@ SIMPLE_JWT = {
     'USER_ID_FIELD': 'email',  # or any other unique field for your user model
     'ALGORITHM': 'HS256',
     # Change this to a strong, unique secret key
-    'SIGNING_KEY': get_random_secret_key(),
+    'SIGNING_KEY': "ahhjkhjds",
     'AUTH_HEADER_TYPES': ('JWT',),
 
     'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
 }
 
 DJOSER = {
-    'USER_ID_FIELD': 'id',
-    'PASSWORD_RESET_CONFIRM_URL': 'auth/reset-password/?uid={uid}&token={token}',
-    'USERNAME_RESET_CONFIRM_URL': 'username/reset/confirm/?uid={uid}&token={token}',
-    'ACTIVATION_URL': 'auth/activate/?uid={uid}&token={token}',
+    'USER_ID_FIELD': 'email',
+    'PASSWORD_RESET_CONFIRM_URL': 'auth/reset-password/{uid}/{token}',
+    'USERNAME_RESET_CONFIRM_URL': 'username/reset/confirm/?uid={email}&token={token}',
+    'ACTIVATION_URL': 'auth/activate/{uid}/{token}',
     'SEND_ACTIVATION_EMAIL': True,
     'SEND_CONFIRMATION_EMAIL': True,
     'PASSWORD_CHANGED_EMAIL_CONFIRMATION': True,
@@ -201,6 +201,6 @@ DJOSER = {
         "user_create": "school_managment.serialization.PersonSerializer",
         "user": "school_managment.serialization.PersonSerializer",
         "current_user": "school_managment.serialization.PersonSerializer",
-        'password_reset_confirm': 'djoser.serializers.PasswordResetConfirmSerializer',
+        'password_reset_confirm': 'school_managment.serialization.CustomPasswordResetConfirmSerializer',
     },
 }
