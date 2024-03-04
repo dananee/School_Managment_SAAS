@@ -6,6 +6,7 @@ from django.contrib.auth.models import AbstractUser, BaseUserManager, AbstractBa
 from django.contrib.auth.models import Permission, Group
 from django.contrib.auth.hashers import make_password
 
+
 def upload_to(instance, filename):
     return f'images/{filename}'
 
@@ -56,7 +57,7 @@ class PersonManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
         if not email:
             raise ValueError('The Email field must be set')
-        
+
         email = self.normalize_email(email)
         user = self.model(email=email, **extra_fields)
         if password:
@@ -70,7 +71,6 @@ class PersonManager(BaseUserManager):
             password=password
         )
 
-        
         user.is_superuser = True
         user.is_admin = True
         user.is_staff = True
@@ -80,32 +80,21 @@ class PersonManager(BaseUserManager):
 
 class Person(AbstractBaseUser):
     # person_id = models.AutoField(primary_key=True)
+    last_login = models.DateTimeField(auto_now_add=True, blank=True)
     first_name = models.CharField(max_length=255)
     last_name = models.CharField(max_length=255)
     phone = models.CharField(max_length=200, null=False)
-    profile_image = models.ImageField(
-        upload_to=upload_to, blank=True, null=True)
+    
     gender = models.CharField(
         max_length=1, choices=Genders, default=Genders.MEN)
     email = models.EmailField(unique=True)
-
-    is_active = models.BooleanField(default=True)
+    is_owner = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)  # Add is_staff field
-    is_superuser = models.BooleanField(default=False) 
-
+    is_superuser = models.BooleanField(default=False)
+    birth_date = models.DateField(blank=True,null=True)
     objects = PersonManager()
     USERNAME_FIELD = 'email'
-
-    groups = models.ManyToManyField(
-        Group,
-        blank=True,
-        related_name='person_groups'  # Unique related_name for Person model groups
-    )
-    user_permissions = models.ManyToManyField(
-        Permission,
-        blank=True,
-        related_name='person_permissions'  # Unique related_name for Person model
-    )
 
     class Meta:
         db_table = 'Person'
@@ -125,12 +114,14 @@ class Person(AbstractBaseUser):
 class SchoolMembers(models.Model):
 
     user_id = models.AutoField(primary_key=True)
+    profile_image = models.ImageField(
+        upload_to=upload_to, blank=True, null=True)
     role = models.CharField(
         max_length=2, choices=Roles, default=Roles.STAFF)
     person = models.OneToOneField(Person, on_delete=models.CASCADE)
     school = models.ForeignKey(
-        SchoolDataModel, on_delete=models.CASCADE, null=True, blank=True)
-
+        SchoolDataModel, on_delete=models.CASCADE)
+    
     class Meta:
         db_table = 'SchoolMembers'
         verbose_name = 'SchoolMember'
@@ -145,7 +136,7 @@ class Admin(models.Model):
     user = models.OneToOneField(SchoolMembers, on_delete=models.CASCADE)
 
     def __str__(self) -> str:
-        return f'{self.user.user_id} - {self.user.username}'
+        return f'{self.user.user_id} - {self.user.person.last_name} - {self.user.school.name}'
 
 
 class Student(models.Model):
@@ -160,7 +151,7 @@ class Student(models.Model):
         verbose_name_plural = 'Students'
 
     def __str__(self) -> str:
-        return f'{self.user.user_id} - {self.user.username}'
+        return f'{self.user.user_id} - {self.user.person.email}'
 
 
 class Parent(models.Model):
@@ -175,7 +166,7 @@ class Parent(models.Model):
         verbose_name_plural = 'Parents'
 
     def __str__(self) -> str:
-        return f'{self.user.user_id} - {self.user.username}'
+        return f'{self.user.user_id} - '
 
 
 class Staff(models.Model):
@@ -195,31 +186,39 @@ class Staff(models.Model):
 
 class Class(models.Model):
     class_id = models.AutoField(primary_key=True)
-    class_name = models.CharField(max_length=255)
+    class_name = models.CharField(max_length=200, null=False, blank=False)
+    grade = models.CharField(max_length=200, null=False, blank=False)
     school = models.ForeignKey(
-        SchoolDataModel, on_delete=models.CASCADE, null=True, blank=True)
+        SchoolDataModel, on_delete=models.CASCADE, null=False, blank=False)
 
     class Meta:
-        unique_together = ('class_name', 'school')
+        unique_together = ['school','class_id'] 
+        db_table = 'Class'
+        verbose_name = 'Class'
+        verbose_name_plural = 'Classes'
 
     def __str__(self) -> str:
-        return f'{self.school.name} - {self.class_name}'
+        return f'{self.school.name} - {self.class_name} {self.grade}'
 
 
 class Teacher(models.Model):
     teacher_id = models.AutoField(primary_key=True)
     user = models.OneToOneField(SchoolMembers, on_delete=models.CASCADE)
-    qualification = models.CharField(max_length=255, null=True, blank=True)
-    experience = models.IntegerField(null=True, blank=True)
-    specialization = models.CharField(max_length=255, null=True, blank=True)
-    contact_number = models.CharField(max_length=15, null=True, blank=True)
-    address = models.TextField(null=True, blank=True)
-    joining_date = models.DateField(null=True, blank=True)
+    qualification = models.CharField(max_length=255, null=False, blank=False)
+    experience = models.IntegerField(null=False, blank=False)
+    specialization = models.CharField(max_length=255, null=False, blank=False)
+    address = models.TextField(null=False, blank=False)
+    joining_date = models.DateField(auto_now_add=True)
     teaching_classes = models.ManyToManyField(
-        Class, related_name='teachers', blank=True)
+        Class, related_name='teachers', blank=False)
+
+    class Meta:
+        db_table = 'Teacher'
+        verbose_name = 'Teacher'
+        verbose_name_plural = 'Teachers'
 
     def __str__(self):
-        return f"{self.user.username}'s Profile"
+        return f"{self.user.person.email}'s Profile"
 
 
 class Subject(models.Model):
@@ -228,28 +227,41 @@ class Subject(models.Model):
     school = models.ForeignKey(
         SchoolDataModel, on_delete=models.CASCADE, null=True, blank=True)
 
+    class Meta:
+        db_table = 'Subject'
+        verbose_name = 'Subject'
+        verbose_name_plural = 'Subjects'
+
     def __str__(self) -> str:
         return f'{self.school.name} - {self.subject_name}'
 
 
 class Attendance(models.Model):
     attendance_id = models.AutoField(primary_key=True)
-    date = models.DateField()
-    student = models.ForeignKey(Student, on_delete=models.CASCADE, null=True)
+    date = models.DateTimeField()
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, null=True,blank=False)
     school = models.ForeignKey(
-        SchoolDataModel, on_delete=models.CASCADE, null=True, blank=True)
+        SchoolDataModel, on_delete=models.CASCADE, null=True, blank=False)
 
     def __str__(self) -> str:
         return f'{self.school.name} - {self.student}'
 
     class Meta:
         unique_together = ('date', 'student')
+        db_table = 'Attendance'
+        verbose_name = 'Attendance'
+        verbose_name_plural = 'Attendances'
 
 
 class Grade(models.Model):
     grade_id = models.AutoField(primary_key=True)
     grade = models.CharField(max_length=255)
     student = models.ForeignKey(Student, on_delete=models.CASCADE, null=True)
+
+    class Meta:
+        db_table = 'Grade'
+        verbose_name = 'Grade'
+        verbose_name_plural = 'Grades'
 
 
 class Exam(models.Model):
@@ -262,6 +274,11 @@ class Exam(models.Model):
     subject_association = models.ForeignKey(
         Subject, on_delete=models.CASCADE, null=True)
 
+    class Meta:
+        db_table = 'Exam'
+        verbose_name = 'Exam'
+        verbose_name_plural = 'Exams'
+
     # Additional fields, relationships, if needed
 
 
@@ -271,6 +288,11 @@ class Result(models.Model):
     exam = models.OneToOneField(Exam, on_delete=models.CASCADE, null=True)
     student = models.ForeignKey(Student, on_delete=models.CASCADE, null=True)
     # Additional fields, relationships, if needed
+
+    class Meta:
+        db_table = 'Result'
+        verbose_name = 'Result'
+        verbose_name_plural = 'Results'
 
 
 class ClassRoom(models.Model):
@@ -283,12 +305,19 @@ class ClassRoom(models.Model):
         Class, related_name='classrooms_taught', blank=True)
     assigned_teacher = models.ForeignKey(
         Teacher, on_delete=models.SET_NULL, null=True, blank=True)
-    subjects_taught = models.ManyToManyField(
-        Subject, related_name='classrooms_taught', blank=True)
+    subjects_taught = models.ForeignKey(
+        Subject, related_name='classrooms_taught',on_delete=models.SET_NULL, blank=True,null=True)
     # Add other fields specific to the ClassRoom model if needed
+    school = models.ForeignKey(
+        SchoolDataModel, on_delete=models.CASCADE, null=True, blank=True)
+    
+    class Meta:
+        db_table = 'ClassRoom'
+        verbose_name = 'Class Room'
+        verbose_name_plural = 'Class Rooms'
 
     def __str__(self):
-        return self.room_name
+        return f"{self.room_name}  "
 
 
 class ClassSchedule(models.Model):
@@ -305,11 +334,29 @@ class ClassSchedule(models.Model):
     start_time = models.TimeField()
     end_time = models.TimeField()
     class_room = models.ForeignKey(ClassRoom, on_delete=models.CASCADE)
+    school = models.ForeignKey(
+        SchoolDataModel, on_delete=models.CASCADE, null=True, blank=True)
     # Add other fields specific to the ClassSchedule model if needed
+
+    class Meta:
+        db_table = 'ClassSchedule'
+        verbose_name = 'Class Schedule'
+        verbose_name_plural = 'Class Schedules'
 
     def __str__(self):
         return f"{self.day} | {self.start_time} - {self.end_time} | Room: {self.class_room}"
 
 
+class Events(models.Model):
 
-
+    event_name = models.CharField(max_length=200,blank=False,null=False)
+    desricption = models.TextField(max_length=300,blank=True,default='no description')
+    date_start = models.DateTimeField()
+    date_end = models.DateTimeField()
+    color = models.CharField(max_length=12)
+    is_all_day = models.BooleanField(default=False)
+    school = models.ForeignKey(
+        SchoolDataModel, on_delete=models.CASCADE, null=True, blank=True)
+    
+    def __str__(self) -> str:
+        return f"{self.event_name} - {self.school}"

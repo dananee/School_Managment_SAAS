@@ -17,7 +17,7 @@ import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
+PROJECT_PATH = os.path.realpath(os.path.dirname(__file__))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
@@ -31,8 +31,12 @@ DEBUG = True
 ALLOWED_HOSTS = []
 
 CSRF_TRUSTED_ORIGINS = ["http://127.0.0.1:8000"]
-EMAIL_HOST = 'localhost'
-EMAIL_PORT = 587
+# EMAIL CONFIG
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "smtp.gmail.com"
+EMAIL_PORT = "587"
+EMAIL_HOST_USER = "dananeabdjalil2@gmail.com"
+EMAIL_HOST_PASSWORD = "iubd hmzq zjri fnbr "
 EMAIL_USE_TLS = True
 
 
@@ -47,9 +51,11 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
     'school_managment',
     'djoser',
     'corsheaders',
+    'drf_yasg'
 
 ]
 
@@ -70,7 +76,7 @@ ROOT_URLCONF = 'school_managment_saas.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-       'DIRS': [BASE_DIR, 'templates/',],
+
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -158,22 +164,7 @@ TIME_INPUT_FORMATS = [
     '%m/%d/%y']             # '10/25/06'
 
 
-
 AUTH_USER_MODEL = 'school_managment.Person'
-
-SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
-    'USER_ID_FIELD': 'email',  # or any other unique field for your user model
-    'ALGORITHM': 'HS256',
-    # Change this to a strong, unique secret key
-    'SIGNING_KEY': get_random_secret_key(),
-    'AUTH_HEADER_TYPES': ('Bearer',),
-
-    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
-}
-
-
 AUTHENTICATION_BACKENDS = [
     'school_managment.authentication.PersonAuthenticationBackend',
     'django.contrib.auth.backends.ModelBackend',  # Default backend
@@ -183,4 +174,35 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ],
+}
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=15),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+    'USER_ID_FIELD': 'email',  # or any other unique field for your user model
+    'ALGORITHM': 'HS256',
+    # Change this to a strong, unique secret key
+    'SIGNING_KEY': "ahhjkhjds",
+    'AUTH_HEADER_TYPES': ('JWT',),
+    'BLACKLIST_AFTER_ROTATION': True,
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
+}
+
+DJOSER = {
+    'USER_ID_FIELD': 'email',
+    'PASSWORD_RESET_CONFIRM_URL': 'auth/reset-password/{uid}/{token}',
+    'USERNAME_RESET_CONFIRM_URL': 'username/reset/confirm/?uid={email}&token={token}',
+    'ACTIVATION_URL': 'auth/activate/{uid}/{token}',
+    'SEND_ACTIVATION_EMAIL': True,
+    'SEND_CONFIRMATION_EMAIL': True,
+    'PASSWORD_CHANGED_EMAIL_CONFIRMATION': True,
+    'SET_PASSWORD_RETYPE': True,
+    'PASSWORD_RESET_SHOW_EMAIL_NOT_FOUND': True,
+    'SERIALIZERS': {
+        "user_create": "school_managment.serialization.PersonSerializer",
+        "user": "school_managment.serialization.PersonSerializer",
+        "current_user": "school_managment.serialization.PersonSerializer",
+        'password_reset_confirm': 'school_managment.serialization.CustomPasswordResetConfirmSerializer',
+        'token_create' : 'school_managment.serialization.CustomTokenObtainPairSerializer'
+    },
 }
