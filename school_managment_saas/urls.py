@@ -23,7 +23,7 @@ from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 
-from school_managment.views import password_reset_confirm, activation_email_account
+from school_managment.views import CurrentUserView, MyTokenObtainPairView, password_reset_confirm, activation_email_account
 
 schema_view = get_schema_view(
     openapi.Info(
@@ -50,7 +50,8 @@ urlpatterns = [
         name="schema-swagger-ui",
     ),
     path('api/', include("school_managment.urls")),
-
+    path('auth/jwt/create/', MyTokenObtainPairView.as_view(), name='customtoken'),
+    path('auth/users/me/', CurrentUserView.as_view(), name='current_user'),
     path('auth/', include('djoser.urls')),
     path('auth/', include('djoser.urls.jwt')),
     # path("auth/", include(router.urls)),
@@ -58,4 +59,6 @@ urlpatterns = [
          password_reset_confirm, name='password_reset_confirm'),
     path('auth/activate/<uidb64>/<token>',
          activation_email_account, name='activation_email_account'),
+
+    # path('auth/blacklist/', LogoutAndBlacklistRefreshTokenForUserView.as_view(), name='blacklist')
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
