@@ -4,8 +4,8 @@ from rest_framework.generics import ListCreateAPIView
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
 from school_managment.permissions import IsStaffOrAdminUser
-from .serialization import  CustomTokenObtainPairSerializer, PasswordResetConfirmSerializer, PasswordResetSerializer, PersonSerializer, ScheduleClassSerializer,SchoolDataSerializer,ClassSerializer, SchoolMembersSerializer, TeacherSerializer, SubjectSerializer, ClassRoomSerializer
-from .models import ClassSchedule, Person, SchoolDataModel,Class, SchoolMembers, Teacher, Subject, ClassRoom
+from .serialization import CustomTokenObtainPairSerializer, PasswordResetConfirmSerializer, PasswordResetSerializer, PersonSerializer, ScheduleClassSerializer, SchoolDataSerializer, ClassSerializer, SchoolMembersSerializer, TeacherSerializer, SubjectSerializer, ClassRoomSerializer
+from .models import ClassSchedule, Person, SchoolDataModel, Class, SchoolMembers, Teacher, Subject, ClassRoom
 from rest_framework import viewsets
 from rest_framework import status
 from rest_framework.response import Response
@@ -16,6 +16,9 @@ from rest_framework import generics, status
 from django.utils.http import urlsafe_base64_encode
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
+
 
 class SchoolDataView(viewsets.ModelViewSet):
 
@@ -27,21 +30,56 @@ class ClassViewSet(viewsets.ModelViewSet):
     queryset = Class.objects.all()
     serializer_class = ClassSerializer
 
+
 class TeacherViewSet(viewsets.ModelViewSet):
     queryset = Teacher.objects.all()
     serializer_class = TeacherSerializer
     permission_classes = [IsStaffOrAdminUser]
 
+
 class SubjectViewSet(viewsets.ModelViewSet):
     queryset = Subject.objects.all()
     serializer_class = SubjectSerializer
 
+
 class ClassRoomViewSet(viewsets.ModelViewSet):
     queryset = ClassRoom.objects.all()
-    serializer_class = ClassRoomSerializer 
-    
+    serializer_class = ClassRoomSerializer
+
 
 class PersonViewSet(viewsets.ViewSet):
+
+    permission_classes_by_action = {
+        "default": [IsAuthenticated],
+        "retrieve": [IsAuthenticated, IsAdminUser],
+        'list': [IsAdminUser],
+        'create': [IsAdminUser],
+        'update': [IsAdminUser],
+        'partial_update': [IsAdminUser],
+        'destroy': [IsAdminUser, ]
+    }
+
+    def get_permissions(self):
+        try:
+            # return permission_classes depending on `action`
+            return [
+                permission()
+                for permission in self.permission_classes_by_action[self.action]
+            ]
+        except KeyError:
+            # action is not set return default permission_classes
+            return [
+                permission()
+                for permission in self.permission_classes_by_action["default"]
+            ]
+
+    def list(self, request):
+        if request.user.is_superuser:
+            queryset = Person.objects.all()
+            serializer = PersonSerializer(queryset, many=True)
+            return Response(serializer.data)
+        return Response(status=status.HTTP_403_FORBIDDEN)
+
     def create(self, request):
         serializer = PersonSerializer(data=request.data)
         if serializer.is_valid():
@@ -75,21 +113,20 @@ class PersonViewSet(viewsets.ViewSet):
             return Response(status=status.HTTP_204_NO_CONTENT)
         except Person.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
-    
+
 
 class SchoolMembersViewSet(viewsets.ModelViewSet):
     queryset = SchoolMembers.objects.all()
     serializer_class = SchoolMembersSerializer
+
 
 class ScheduleClassesViewSet(viewsets.ModelViewSet):
     queryset = ClassSchedule.objects.all()
     serializer_class = ScheduleClassSerializer
 
 
-
 class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
-
 
 
 class PasswordResetView(generics.GenericAPIView):

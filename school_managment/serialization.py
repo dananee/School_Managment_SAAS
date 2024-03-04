@@ -32,7 +32,8 @@ class PersonSerializer(serializers.ModelSerializer):
          
 
 class SchoolMembersSerializer(serializers.ModelSerializer):
-     class Meta:
+    person  = PersonSerializer()
+    class Meta:
         model = SchoolMembers
         # Add other fields as needed
         fields = '__all__'
