@@ -37,6 +37,9 @@ pillow = "*"
 django-mysql = "*"
 timedelta = "*"
 drf-yasg = "*"
+uvicorn = "*"
+daphne = "*"
+channels = "*"
 
 [dev-packages]
 

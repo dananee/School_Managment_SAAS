@@ -1,6 +1,6 @@
 import json
 from rest_framework import serializers
-from .models import Attendance, ClassSchedule, Events, SchoolDataModel,  Genders, Class, SchoolMembers, Student, Teacher, Subject, ClassRoom, Person
+from .models import Attendance, ClassSchedule, Events, NotificationModel, Parent, SchoolDataModel,  Genders, Classe, SchoolMembers, Student, Teacher, Subject, ClassRoom, Person
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from djoser.serializers import PasswordResetConfirmSerializer as DjoserPasswordResetConfirmSerializer
 
@@ -62,49 +62,117 @@ class SchoolDataSerializer(serializers.ModelSerializer):
 
 
 class ClassSerializer(serializers.ModelSerializer):
+    
+    
     class Meta:
-        model = Class
+        model = Classe
         # Add other fields as needed
-        fields = ['class_id', 'class_name', 'school','grade']
+        fields = "__all__"
 
     
 
 
 class PersonSerializer(serializers.ModelSerializer):
-    # We'll handle password separately
-    password = serializers.CharField(write_only=True)
+    password = serializers.CharField(write_only=True)  # Include password field for writing only
+
     class Meta:
         model = Person
-        fields = "__all__"
-         
+        fields = "__all__"  # Add other fields as needed
 
     def create(self, validated_data):
-        # Create and return a new 'Person' instance
-        return Person.objects.create_user(**validated_data)
+        password = validated_data.pop('password', None)  # Pop password from validated data
+        instance = super().create(validated_data)  # Call superclass create method
+
+        if password:
+            instance.set_password(password)  # Set password using set_password method
+            instance.save()  # Save instance to ensure password is hashed
+        return instance
+
+    def update(self, instance, validated_data):
+        password = validated_data.pop('password', None)  # Pop password from validated data
+        instance = super().update(instance, validated_data)  # Call superclass update method
+
+        if password:
+            instance.set_password(password)  # Set password using set_password method
+            instance.save()  # Save instance to ensure password is hashed
+        return instance
+
+
+# class SchoolMembersSerializer(serializers.ModelSerializer):
+#     person = PersonSerializer()
+#     profile_image = Base64ImageField(
+#         max_length=None, use_url=True,
+#     )
+#     class Meta:
+#         model = SchoolMembers
+#         # Add other fields as needed
+#         fields = "__all__"
+#         extra_kwargs = {'school': {'required': False},'profile_image': {'required': False}}
+
+     
+
+#     def create(self, validated_data):
+#         person_data = validated_data.pop('person')
+#         email_ = person_data["email"]
+#         person_serializer = PersonSerializer(data=person_data, context=self.context)  # Pass context
+#         if person_serializer.is_valid():
+#             if Person.objects.filter(email=email_).exists() == False:
+#                 person = person_serializer.save() 
+#                 school_member = SchoolMembers.objects.create(person=person, **validated_data)
+#                 return school_member
+#             else:
+#                 raise serializers.ValidationError("Person data is alredy Exists")
+            
+             
+#         else:
+#             # Handle serializer errors if needed
+#             raise serializers.ValidationError("Person data is not valid")
 
 
 class SchoolMembersSerializer(serializers.ModelSerializer):
     person = PersonSerializer()
     profile_image = Base64ImageField(
-        max_length=None, use_url=True,
-    )
+            max_length=None, use_url=True,
+        )
+
     class Meta:
         model = SchoolMembers
-        # Add other fields as needed
-        fields = "__all__"
-        extra_kwargs = {'school': {'required': False},'profile_image': {'required': False}}
+        fields = '__all__'
+        extra_kwargs = {'school': {'required': False}, 'profile_image': {'required': False}}
 
     def create(self, validated_data):
         person_data = validated_data.pop('person')
-        person_serializer = PersonSerializer(data=person_data, context=self.context)  # Pass context
-        if person_serializer.is_valid():
-            person = person_serializer.save()  # Use save() to create the person object
-            school_member = SchoolMembers.objects.create(person=person, **validated_data)
-            return school_member
-        else:
-            # Handle serializer errors if needed
-            raise serializers.ValidationError("Person data is not valid")
+        email_ = person_data.get('email')
 
+        # Check if a person with the same email already exists
+        try:
+            person = Person.objects.get(email=email_)
+        except Person.DoesNotExist:
+            person_serializer = PersonSerializer(data=person_data, context=self.context)
+            if person_serializer.is_valid():
+                person = person_serializer.save()
+            else:
+                raise serializers.ValidationError("Person data is not valid")
+        else:
+            # Update existing person with new data
+            person_serializer = PersonSerializer(instance=person, data=person_data, partial=True, context=self.context)
+            if person_serializer.is_valid():
+                person = person_serializer.save()
+            else:
+                raise serializers.ValidationError("Person data is not valid")
+
+        validated_data['person'] = person
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        person_data = validated_data.pop('person')
+        person_serializer = PersonSerializer(instance=instance.person, data=person_data, partial=True, context=self.context)
+        if person_serializer.is_valid():
+            person = person_serializer.save()
+            validated_data['person'] = person
+            return super().update(instance, validated_data)
+        else:
+            raise serializers.ValidationError("Person data is not valid")
 
 
 class TeacherSerializer(serializers.ModelSerializer):
@@ -115,6 +183,18 @@ class TeacherSerializer(serializers.ModelSerializer):
         model = Teacher
         fields = "__all__"  # Add other fields as needed
         extra_kwargs = {'teaching_classes': {'required': True}}
+    
+    def update(self, instance, validated_data):
+        user_data = validated_data.pop('user')
+        user_data['school'] = user_data['school'].id
+        print(f"USer {user_data}")
+        member_serializer = SchoolMembersSerializer(instance=instance.user, data=user_data, partial=True, context=self.context)
+        if member_serializer.is_valid():
+            person = member_serializer.save()
+            validated_data['user'] = person
+            return super().update(instance, validated_data)
+        else:
+            raise serializers.ValidationError({"error":member_serializer.errors})
 
     def create(self, validated_data):
         person_data = validated_data.pop('user')
@@ -137,25 +217,43 @@ class TeacherSerializer(serializers.ModelSerializer):
 
 class StudentSerializer(serializers.ModelSerializer):
     user = SchoolMembersSerializer()
-     
+    classe_id = serializers.PrimaryKeyRelatedField(queryset=Classe.objects.all(),source='classe',write_only=True)
 
     class Meta:
         model = Student
-        fields = "__all__"  # Add other fields as needed
-        # extra_kwargs = {'teaching_classes': {'required': True}}
+        fields =  ("id","user", "classe_id") # Add other fields as needed
+        
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation['classe'] = ClassSerializer(instance.classe).data
+        return representation
+    
+    def update(self, instance, validated_data):
+        user_data = validated_data.pop('user')
+        user_data['school'] = user_data['school'].id
+        print(f"USer {user_data}")
+        member_serializer = SchoolMembersSerializer(instance=instance.user, data=user_data, partial=True, context=self.context)
+        if member_serializer.is_valid():
+            person = member_serializer.save()
+            validated_data['user'] = person
+            return super().update(instance, validated_data)
+        else:
+            raise serializers.ValidationError({"error":member_serializer.errors})
+
 
     def create(self, validated_data):
         person_data = validated_data.pop('user')
         person_data['school'] = person_data['school'].id
-         
-         
-        # print(f"TEACHER    {validated_data['teaching_classes'][0].class_id}")
-        member_serializer = SchoolMembersSerializer(data=person_data, context=self.context)  # Pass context
+        
+        
+        member_serializer = SchoolMembersSerializer(data=person_data, context=self.context)
+        
         if member_serializer.is_valid():
             person = member_serializer.save()   # Use save() to create the person object
             student = Student.objects.create(user=person, **validated_data)
              
             return student
+            
         else:
             # Handle serializer errors if needed
             raise serializers.ValidationError(f"Memeber data is not valid {member_serializer.errors}")
@@ -164,7 +262,7 @@ class StudentSerializer(serializers.ModelSerializer):
 class SubjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = Subject
-        fields = ['subject_id', 'subject_name']
+        fields = ['id', 'subject_name']
 
 
   # Add other fields as needed
@@ -176,7 +274,7 @@ class ClassRoomSerializer(serializers.ModelSerializer):
     assigned_teacher = TeacherSerializer(read_only=True)
     class Meta:
         model = ClassRoom
-        fields = ['room_id', 'room_name', 'capacity', 'building', 'is_virtual','school',
+        fields = ['id', 'room_name', 'capacity', 'building', 'is_virtual','school',
                   'classes_taught', 'assigned_teacher', 'subjects_taught']  # Add other fields as needed
         extra_kwargs = {'classes_taught': {'required': True}, 'assigned_teacher': {
             'required': True}, 'subjects_taught': {'required': True},'school': {'required': True} }
@@ -223,4 +321,26 @@ class AttendanceSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Attendance
+        fields = "__all__"
+
+# class StatisticSerializer(serializers.ModelSerializer):
+
+#     class Meta:
+#         model = Attendance
+#         fie
+
+
+class ParentSerializer(serializers.ModelSerializer):
+    user = SchoolMembersSerializer()
+
+    class Meta:
+        model = Parent
+        fields = "__all__"
+
+
+
+class NotificationSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = NotificationModel
         fields = "__all__"

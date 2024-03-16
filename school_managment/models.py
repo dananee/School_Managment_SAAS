@@ -28,6 +28,7 @@ class Roles(models.TextChoices):
     STAFF = "SF", _('STAFF')
     TEACHER = "TE", _('TEACHER')
     STUDENT = "ST", _('STUDENT')
+    PARENT = "PT", _('PARENT')
 
 
 class SchoolDataModel(models.Model):
@@ -57,6 +58,8 @@ class PersonManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
         if not email:
             raise ValueError('The Email field must be set')
+        
+         
 
         email = self.normalize_email(email)
         user = self.model(email=email, **extra_fields)
@@ -74,12 +77,14 @@ class PersonManager(BaseUserManager):
         user.is_superuser = True
         user.is_admin = True
         user.is_staff = True
+        user.is_active = True
+         
         user.save(using=self._db)
         return user
 
 
 class Person(AbstractBaseUser):
-    # person_id = models.AutoField(primary_key=True)
+    # person_id = 
     last_login = models.DateTimeField(auto_now_add=True, blank=True)
     first_name = models.CharField(max_length=255)
     last_name = models.CharField(max_length=255)
@@ -113,7 +118,7 @@ class Person(AbstractBaseUser):
 
 class SchoolMembers(models.Model):
 
-    user_id = models.AutoField(primary_key=True)
+     
     profile_image = models.ImageField(
         upload_to=upload_to, blank=True, null=True)
     role = models.CharField(
@@ -128,7 +133,7 @@ class SchoolMembers(models.Model):
         verbose_name_plural = 'SchoolMembers'
 
     def __str__(self) -> str:
-        return f"{self.person.last_name}  - {self.role}"
+        return f"{self.person.first_name} {self.person.last_name}  - {self.role} - {self.school}"
 
 
 class Admin(models.Model):
@@ -141,8 +146,8 @@ class Admin(models.Model):
 
 class Student(models.Model):
     # Student-specific fields
-    student_id = models.AutoField(primary_key=True)
-    class_id = models.ForeignKey('Class', on_delete=models.CASCADE)
+     
+    classe = models.ForeignKey('Classe', on_delete=models.CASCADE)
     user = models.OneToOneField(SchoolMembers, on_delete=models.CASCADE)
 
     class Meta:
@@ -156,8 +161,8 @@ class Student(models.Model):
 
 class Parent(models.Model):
     # Parent-specific fields
-    parent_id = models.AutoField(primary_key=True)
-    student_id = models.ForeignKey(Student, on_delete=models.CASCADE)
+     
+    student = models.ForeignKey(Student, on_delete=models.CASCADE)
     user = models.OneToOneField(SchoolMembers, on_delete=models.CASCADE)
 
     class Meta:
@@ -171,7 +176,7 @@ class Parent(models.Model):
 
 class Staff(models.Model):
     # Staff-specific fields
-    staff_id = models.AutoField(primary_key=True)
+   
     position = models.CharField(max_length=255)
     user = models.OneToOneField(SchoolMembers, on_delete=models.CASCADE)
 
@@ -184,17 +189,17 @@ class Staff(models.Model):
         return f'{self.user.person.last_name} - {self.position}'
 
 
-class Class(models.Model):
-    class_id = models.AutoField(primary_key=True)
+class Classe(models.Model):
+    
     class_name = models.CharField(max_length=200, null=False, blank=False)
     grade = models.CharField(max_length=200, null=False, blank=False)
     school = models.ForeignKey(
         SchoolDataModel, on_delete=models.CASCADE, null=False, blank=False)
 
     class Meta:
-        unique_together = ['school','class_id'] 
-        db_table = 'Class'
-        verbose_name = 'Class'
+         
+        db_table = 'Classe'
+        verbose_name = 'Classe'
         verbose_name_plural = 'Classes'
 
     def __str__(self) -> str:
@@ -202,7 +207,7 @@ class Class(models.Model):
 
 
 class Teacher(models.Model):
-    teacher_id = models.AutoField(primary_key=True)
+    
     user = models.OneToOneField(SchoolMembers, on_delete=models.CASCADE)
     qualification = models.CharField(max_length=255, null=False, blank=False)
     experience = models.IntegerField(null=False, blank=False)
@@ -210,7 +215,7 @@ class Teacher(models.Model):
     address = models.TextField(null=False, blank=False)
     joining_date = models.DateField(auto_now_add=True)
     teaching_classes = models.ManyToManyField(
-        Class, related_name='teachers', blank=False)
+        Classe, related_name='teachers', blank=False)
 
     class Meta:
         db_table = 'Teacher'
@@ -222,7 +227,7 @@ class Teacher(models.Model):
 
 
 class Subject(models.Model):
-    subject_id = models.AutoField(primary_key=True)
+    
     subject_name = models.CharField(max_length=255)
     school = models.ForeignKey(
         SchoolDataModel, on_delete=models.CASCADE, null=True, blank=True)
@@ -237,7 +242,7 @@ class Subject(models.Model):
 
 
 class Attendance(models.Model):
-    attendance_id = models.AutoField(primary_key=True)
+    
     date = models.DateTimeField()
     student = models.ForeignKey(Student, on_delete=models.CASCADE, null=True,blank=False)
     school = models.ForeignKey(
@@ -254,7 +259,7 @@ class Attendance(models.Model):
 
 
 class Grade(models.Model):
-    grade_id = models.AutoField(primary_key=True)
+     
     grade = models.CharField(max_length=255)
     student = models.ForeignKey(Student, on_delete=models.CASCADE, null=True)
 
@@ -265,12 +270,12 @@ class Grade(models.Model):
 
 
 class Exam(models.Model):
-    exam_id = models.AutoField(primary_key=True)
+     
     date = models.DateField()
     school = models.ForeignKey(
         SchoolDataModel, on_delete=models.CASCADE, null=True, blank=True)
     class_association = models.ForeignKey(
-        Class, on_delete=models.CASCADE, null=True)
+        Classe, on_delete=models.CASCADE, null=True)
     subject_association = models.ForeignKey(
         Subject, on_delete=models.CASCADE, null=True)
 
@@ -283,7 +288,7 @@ class Exam(models.Model):
 
 
 class Result(models.Model):
-    result_id = models.AutoField(primary_key=True)
+     
     score = models.FloatField()
     exam = models.OneToOneField(Exam, on_delete=models.CASCADE, null=True)
     student = models.ForeignKey(Student, on_delete=models.CASCADE, null=True)
@@ -296,13 +301,13 @@ class Result(models.Model):
 
 
 class ClassRoom(models.Model):
-    room_id = models.AutoField(primary_key=True)
+ 
     room_name = models.CharField(max_length=255)
     capacity = models.IntegerField()
     building = models.CharField(max_length=255, null=True, blank=True)
     is_virtual = models.BooleanField(default=False)
     classes_taught = models.ManyToManyField(
-        Class, related_name='classrooms_taught', blank=True)
+        Classe, related_name='classrooms_taught', blank=True)
     assigned_teacher = models.ForeignKey(
         Teacher, on_delete=models.SET_NULL, null=True, blank=True)
     subjects_taught = models.ForeignKey(
@@ -313,15 +318,15 @@ class ClassRoom(models.Model):
     
     class Meta:
         db_table = 'ClassRoom'
-        verbose_name = 'Class Room'
-        verbose_name_plural = 'Class Rooms'
+        verbose_name = 'Classe Room'
+        verbose_name_plural = 'Classe Rooms'
 
     def __str__(self):
         return f"{self.room_name}  "
 
 
 class ClassSchedule(models.Model):
-    schedule_id = models.AutoField(primary_key=True)
+    
     day = models.CharField(max_length=10, choices=[
         ('Monday', 'Monday'),
         ('Tuesday', 'Tuesday'),
@@ -340,8 +345,8 @@ class ClassSchedule(models.Model):
 
     class Meta:
         db_table = 'ClassSchedule'
-        verbose_name = 'Class Schedule'
-        verbose_name_plural = 'Class Schedules'
+        verbose_name = 'Classe Schedule'
+        verbose_name_plural = 'Classe Schedules'
 
     def __str__(self):
         return f"{self.day} | {self.start_time} - {self.end_time} | Room: {self.class_room}"
@@ -360,3 +365,17 @@ class Events(models.Model):
     
     def __str__(self) -> str:
         return f"{self.event_name} - {self.school}"
+    
+
+
+class NotificationModel(models.Model):
+
+     
+    sender = models.ForeignKey(SchoolMembers,on_delete=models.CASCADE)
+    message = models.CharField(max_length=255,blank=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+    def __str__(self) -> str:
+        return f"{self.id} - {self.sender}"
+ 

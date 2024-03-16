@@ -43,6 +43,7 @@ EMAIL_USE_TLS = True
 # Application definition
 
 INSTALLED_APPS = [
+    'daphne',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -53,6 +54,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
     'school_managment',
+    'channels',
     'djoser',
     'corsheaders',
     'drf_yasg'
@@ -90,7 +92,11 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'school_managment_saas.wsgi.application'
+ASGI_APPLICATION = 'school_managment_saas.asgi.application'
 
+CHANNEL_LAYERS = {
+    "default": {"BACKEND":"channels.layers.InMemoryChannelLayer"}
+}
 
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases

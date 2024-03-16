@@ -5,8 +5,8 @@ from rest_framework.generics import ListCreateAPIView
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
 from school_managment.permissions import IsStaffOrAdminUser
-from .serialization import AttendanceSerializer, CustomPasswordResetConfirmSerializer, CustomTokenObtainPairSerializer, EventsSerializer,   PersonSerializer, ScheduleClassSerializer, SchoolDataSerializer, ClassSerializer, SchoolMembersSerializer, StudentSerializer, TeacherSerializer, SubjectSerializer, ClassRoomSerializer
-from .models import Attendance, ClassSchedule, Events, Person, SchoolDataModel, Class, SchoolMembers, Student, Teacher, Subject, ClassRoom
+from .serialization import AttendanceSerializer, CustomPasswordResetConfirmSerializer, CustomTokenObtainPairSerializer, EventsSerializer, NotificationSerializer, ParentSerializer,   PersonSerializer, ScheduleClassSerializer, SchoolDataSerializer, ClassSerializer, SchoolMembersSerializer, StudentSerializer, TeacherSerializer, SubjectSerializer, ClassRoomSerializer
+from .models import Attendance, ClassSchedule, Events, NotificationModel, Parent, Person, SchoolDataModel, Classe, SchoolMembers, Student, Teacher, Subject, ClassRoom
 from rest_framework import viewsets
 from rest_framework import status
 from rest_framework.response import Response
@@ -47,13 +47,13 @@ class ClassViewSet(viewsets.ModelViewSet):
         'partial_update': [IsAdminUser],
         'destroy': [IsAdminUser, ]
     }
-    queryset = Class.objects.all()
+    queryset = Classe.objects.all()
     serializer_class = ClassSerializer
 
 
     def list(self, request):
         school_id = request.data.get('school_id')
-        queryset = Class.objects.filter(school=school_id)
+        queryset = Classe.objects.filter(school=school_id)
 
         serializer = ClassSerializer(queryset, many=True)
         return Response(serializer.data)
@@ -79,6 +79,31 @@ class TeacherViewSet(viewsets.ModelViewSet):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
+    def partial_update(self, request, pk=None):
+        try:
+            instance = Teacher.objects.get(pk=pk)
+            serializer = TeacherSerializer(instance, data=request.data, partial=True)
+            print(f"Teacher {pk} -  ")
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Person.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+    
+    def update(self, request, pk=None):
+         
+        try:
+            teacher = Teacher.objects.get(pk=pk)
+            serializer = TeacherSerializer(teacher, data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Person.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
 
 class StudentViewSet(viewsets.ModelViewSet):
     queryset = Student.objects.all()
@@ -95,12 +120,29 @@ class StudentViewSet(viewsets.ModelViewSet):
 
     def create(self, request):
         serializer = StudentSerializer(data=request.data)
+
+        
         if serializer.is_valid():
              
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
+class ParentViewSet(viewsets.ModelViewSet):
+    queryset = Parent.objects.all()
+    serializer_class = ParentSerializer
+    permission_classes = [IsStaffOrAdminUser]
+
+
+    def list(self, request):
+        school_id = request.data.get('school_id')
+        queryset = Parent.objects.filter(user__school=school_id)
+
+        serializer = ParentSerializer(queryset, many=True)
+        return Response(serializer.data)
+
+     
 
 class SubjectViewSet(viewsets.ModelViewSet):
     queryset = Subject.objects.all()
@@ -235,13 +277,15 @@ class SchoolMembersViewSet(viewsets.ModelViewSet):
         try:
             instance = SchoolMembers.objects.get(pk=pk)
             serializer = SchoolMembersSerializer(instance, data=request.data, partial=True)
-            print(f"MEMEBER {pk} - {instance.person.email} - {request.data}")
+            print(f"MEMEBER {pk} - {instance.person.email} - ")
             if serializer.is_valid():
                 serializer.save()
                 return Response(serializer.data)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except Person.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
+        
+    
          
 
 
@@ -373,4 +417,14 @@ class AttendanceView(viewsets.ModelViewSet):
         return Response(serializer.data)
  
 
-    
+class NotificationView(viewsets.ModelViewSet):
+
+    queryset = NotificationModel.objects.all()
+    serializer_class = NotificationSerializer
+
+    def list(self, request):
+        school_id = request.data.get('school_id')
+        queryset = self.queryset.model.objects.filter(sender__school=school_id)
+
+        serializer = self.serializer_class(queryset, many=True)
+        return Response(serializer.data)
