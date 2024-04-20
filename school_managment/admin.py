@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from  .models import ClassRoom, ClassSchedule, Events, NotificationModel, SchoolDataModel, Teacher,SchoolMembers,Person,Student,Parent,Admin,Staff,Classe,Exam,Result,Attendance,Subject
+from  .models import ClassRoom, ClassSchedule, Events, Notification, SchoolDataModel, Teacher,SchoolMembers,Person,Student,Parent,Admin,Staff,Classe,Exam,Result,Attendance,Subject
 # Register your models here.
 
 admin.site.register(SchoolDataModel)
@@ -19,4 +19,4 @@ admin.site.register(Teacher)
 admin.site.register(ClassRoom)
 admin.site.register(ClassSchedule)
 admin.site.register(Events)
-admin.site.register(NotificationModel)
+admin.site.register(Notification)

@@ -67,5 +67,5 @@ urlpatterns = [
 from school_managment.consumer import NotificationConsumer
 
 websocket_urlpatterns = [
-    path("ws/notifications/", NotificationConsumer.as_asgi())
+    path("ws/notifications/<str:role>/", NotificationConsumer.as_asgi())
 ]
