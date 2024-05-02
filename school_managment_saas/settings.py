@@ -103,14 +103,25 @@ CHANNEL_LAYERS = {
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.mysql',
+#         'NAME': 'school_managment_db',
+#         'HOST': '127.0.0.1',
+#         'PORT': '3306',
+#         'USER': 'root',
+#         'PASSWORD': 'mythologie'
+
+#     }
+# }
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'school_managment_db',
-        'HOST': '127.0.0.1',
-        'PORT': '3306',
+        'NAME': 'railway',
+        'HOST': 'viaduct.proxy.rlwy.net',
+        'PORT': '56976',
         'USER': 'root',
-        'PASSWORD': 'mythologie'
+        'PASSWORD': 'gPCcDITwzwTfcYEubDRyMvqXZBNhhfZG'
 
     }
 }
