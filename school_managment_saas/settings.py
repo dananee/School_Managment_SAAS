@@ -14,10 +14,17 @@ from django.core.management.utils import get_random_secret_key
 from datetime import timedelta
 from pathlib import Path
 import os
+import environ
 
+env = environ.Env( DEBUG=(bool, False))
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 PROJECT_PATH = os.path.realpath(os.path.dirname(__file__))
+environ.Env.read_env(os.path.join(BASE_DIR, 'school_managment_saas/.env'))
+
+ 
+SIGNING_KEY = env('SIGNING_KEY')
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
@@ -205,10 +212,7 @@ REST_FRAMEWORK = {
      
 }
 
-import environ
 
-env = environ.Env()
-environ.Env.read_env()
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(days=300),
@@ -216,7 +220,7 @@ SIMPLE_JWT = {
     'USER_ID_FIELD': 'email',  # or any other unique field for your user model
     'ALGORITHM': 'HS256',
     # Change this to a strong, unique secret key
-    'SIGNING_KEY':  env("SECRET_KEY"),
+    'SIGNING_KEY': SIGNING_KEY,
     'AUTH_HEADER_TYPES': ('JWT',),
    
     'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),

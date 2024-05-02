@@ -41,6 +41,7 @@ uvicorn = "*"
 daphne = "*"
 channels = "*"
 environ = "*"
+django-environ = "*"
 
 [dev-packages]
 
