@@ -28,7 +28,9 @@ SECRET_KEY = 'django-insecure-ha33*fs+2f^9%1mf2@gzkxo3(1=ex$*t@xj%w*!b83ka&ebgha
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
+
+
 
 CSRF_TRUSTED_ORIGINS = ["http://127.0.0.1:8000"]
 # EMAIL CONFIG
@@ -43,6 +45,7 @@ EMAIL_USE_TLS = True
 # Application definition
 
 INSTALLED_APPS = [
+    'daphne',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -51,8 +54,9 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework_simplejwt',
-    'rest_framework_simplejwt.token_blacklist',
+   
     'school_managment',
+    'channels',
     'djoser',
     'corsheaders',
     'drf_yasg'
@@ -90,7 +94,11 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'school_managment_saas.wsgi.application'
+ASGI_APPLICATION = 'school_managment_saas.asgi.application'
 
+CHANNEL_LAYERS = {
+    "default": {"BACKEND":"channels.layers.InMemoryChannelLayer"}
+}
 
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
@@ -171,20 +179,30 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 REST_FRAMEWORK = {
+  
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ],
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle'
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '30/min',
+        'user': '60/min'
+    }
+     
 }
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(days=15),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=300),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=300),
     'USER_ID_FIELD': 'email',  # or any other unique field for your user model
     'ALGORITHM': 'HS256',
     # Change this to a strong, unique secret key
     'SIGNING_KEY': "ahhjkhjds",
     'AUTH_HEADER_TYPES': ('JWT',),
-    'BLACKLIST_AFTER_ROTATION': True,
+   
     'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
 }
 

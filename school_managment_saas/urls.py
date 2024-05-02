@@ -7,7 +7,7 @@ Examples:
 Function views
     1. Add an import:  from my_app import views
     2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
+Classe-based views
     1. Add an import:  from other_app.views import Home
     2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
 Including another URLconf
@@ -62,3 +62,10 @@ urlpatterns = [
 
     # path('auth/blacklist/', LogoutAndBlacklistRefreshTokenForUserView.as_view(), name='blacklist')
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+
+from school_managment.consumer import NotificationConsumer
+
+websocket_urlpatterns = [
+    path("ws/notifications/<str:role>/", NotificationConsumer.as_asgi())
+]
