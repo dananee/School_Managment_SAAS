@@ -100,8 +100,8 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'school_managment_saas.wsgi.application'
-ASGI_APPLICATION = 'school_managment_saas.asgi.application'
+WSGI_APPLICATION = 'school_managment_saas.wsgi.app'
+ASGI_APPLICATION = 'school_managment_saas.asgi.app'
 
 CHANNEL_LAYERS = {
     "default": {"BACKEND":"channels.layers.InMemoryChannelLayer"}

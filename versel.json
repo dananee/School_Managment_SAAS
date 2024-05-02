@@ -1,6 +1,15 @@
 {
 
-    "builds": [{
+    "builds": [
+        {
+            "src": "build_files.sh",
+            "use": "@vercel/static-build",
+            "config": {
+              "distDir": "staticfiles_build"
+            }
+          },
+        
+        {
 
         "src": "school_managment_saas/wsgi.py",
 
