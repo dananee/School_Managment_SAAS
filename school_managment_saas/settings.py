@@ -28,7 +28,7 @@ SECRET_KEY = 'django-insecure-ha33*fs+2f^9%1mf2@gzkxo3(1=ex$*t@xj%w*!b83ka&ebgha
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['*','.vercel.app']
 
 
 
@@ -194,13 +194,18 @@ REST_FRAMEWORK = {
      
 }
 
+import environ
+
+env = environ.Env()
+environ.Env.read_env()
+
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(days=300),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=300),
     'USER_ID_FIELD': 'email',  # or any other unique field for your user model
     'ALGORITHM': 'HS256',
     # Change this to a strong, unique secret key
-    'SIGNING_KEY': "ahhjkhjds",
+    'SIGNING_KEY':  env("SECRET_KEY"),
     'AUTH_HEADER_TYPES': ('JWT',),
    
     'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
