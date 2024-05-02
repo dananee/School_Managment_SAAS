@@ -2,6 +2,7 @@ from django.urls import path, include
 
 
 from .views import (
+    AttendanceChartView,
     AttendanceView,
     ClassRoomViewSet,
     ClassViewSet,
@@ -10,16 +11,19 @@ from .views import (
     MyTokenObtainPairView,
     NotificationView,
     ParentViewSet,
+    PerformanceView,
     PersonViewSet,
     ResultView,
     ScheduleClassesViewSet,
     SchoolDataView,
     SchoolMembersViewSet,
     StaffView,
-    StudentPerformanceViewSet,
+    StudentByTeacherViewSet,
+ 
     StudentViewSet,
     SubjectViewSet,
     TeacherViewSet,
+    
 )
 
 
@@ -43,10 +47,14 @@ router.register(r"attendace", AttendanceView)
 router.register(r"notification", NotificationView)
 router.register(r"staff", StaffView)
 router.register(r"result", ResultView)
-router.register(r"perform", StudentPerformanceViewSet, basename="performance")
 router.register(r"exam", ExamViewSet, basename="exams")
+router.register(r"performence", PerformanceView, basename="perform-chart")
+router.register(r"attedchart", AttendanceChartView, basename="attend-chart")
+router.register(r"testudent", StudentByTeacherViewSet, basename="filter-student")
 
 urlpatterns = [
     path("login/", MyTokenObtainPairView.as_view(), name="token_obtain_pair"),
+ 
+ 
     path("", include(router.urls)),
 ]

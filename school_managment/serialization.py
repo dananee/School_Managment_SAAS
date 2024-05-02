@@ -409,16 +409,16 @@ class EventsSerializer(serializers.ModelSerializer):
 
 class AttendanceSerializer(serializers.ModelSerializer):
     schedule_id = serializers.PrimaryKeyRelatedField(
-        queryset=ClassSchedule.objects.all(), source="class_room", write_only=True
+        queryset=ClassSchedule.objects.all(), source="schedule", write_only=True
     )
 
     class Meta:
         model = Attendance
-        fields = ("id", "student", "school", "schedule_id", "date")
+        fields = ("id", "student", "school", "schedule_id", "date","teacher")
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
-        representation["class_room"] = ScheduleClassSerializer(instance.class_room).data
+        representation["schedule"] = ScheduleClassSerializer(instance.schedule).data
         return representation
 
 
@@ -495,7 +495,19 @@ class AttendanceChartSerializers(serializers.ModelSerializer):
 
 
 class ResultSerializers(serializers.ModelSerializer):
+    student_id =  serializers.PrimaryKeyRelatedField(
+        queryset= Student.objects.all(), source="student", write_only=True
+    )
+    exam_id = serializers.PrimaryKeyRelatedField(
+        queryset= Exam.objects.all(), source="exam", write_only=True
+    )
 
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation["student"] = StudentSerializer(instance.student).data
+        representation["exam"] = ExamSerializers(instance.exam).data
+        return representation
+    
     class Meta:
         model = Result
         fields = "__all__"
@@ -539,3 +551,9 @@ class PerformanceSerializer(serializers.ModelSerializer):
 
     def get_performance(self, obj):
         return calculate_performance(obj)
+
+
+class AttendancesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Attendance
+        fields = ['id','date', 'student']

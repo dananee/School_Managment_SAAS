@@ -38,7 +38,6 @@ class NotificationConsumer(AsyncJsonWebsocketConsumer):
 
         response_data = {
             "author": data["author"],
-             
             "status": data["status"],
             "role": data["role"],
             "sender": data["sender_id"],
@@ -53,10 +52,8 @@ class NotificationConsumer(AsyncJsonWebsocketConsumer):
         get_member_by_role = SchoolMembers.objects.filter(role=role)
 
         if not Notification.objects.filter(message=data["message"]).exists():
-            new_message = NotificationSerializer(
-                data=data
-            )
-            if(new_message.is_valid()):
+            new_message = NotificationSerializer(data=data)
+            if new_message.is_valid():
                 new_message.save()
             else:
                 ValueError(f"Notification error : {new_message.error_messages}")

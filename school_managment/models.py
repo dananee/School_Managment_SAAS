@@ -246,19 +246,21 @@ class Subject(models.Model):
 
 class Attendance(models.Model):
 
-    date = models.DateField(auto_now_add=True)
-    class_room = models.ForeignKey(
+    date = models.DateTimeField(auto_now_add=True)
+    schedule = models.ForeignKey(
         "ClassSchedule", on_delete=models.CASCADE, null=True, blank=False
     )
-    student = models.ForeignKey(
-        Student, on_delete=models.CASCADE, null=True, blank=False
-    )
+    student = models.ManyToManyField(
+        Student, related_name="student", blank=False,null=False
+    ) 
     school = models.ForeignKey(
-        SchoolDataModel, on_delete=models.CASCADE, null=True, blank=False
+        SchoolDataModel, on_delete=models.CASCADE, null=False, blank=False
     )
-
+    teacher = models.ForeignKey(
+        Teacher, on_delete=models.CASCADE, null=False, blank=False
+    )
     def __str__(self) -> str:
-        return f"{self.school.name} - {self.student}"
+        return f"{self.id} - {self.date} - {self.school}"
 
     class Meta:
 
@@ -308,10 +310,15 @@ class Exam(models.Model):
 
 class Result(models.Model):
 
+    date = models.DateField(auto_now_add=True)
     score = models.FloatField()
-    exam = models.OneToOneField(Exam, on_delete=models.CASCADE, null=True)
+    exam = models.ForeignKey(Exam, on_delete=models.CASCADE, null=True)
     student = models.ForeignKey(Student, on_delete=models.CASCADE, null=True)
+    teacher = models.ForeignKey(Teacher,on_delete=models.CASCADE,null=False)
     # Additional fields, relationships, if needed
+
+    def __str__(self) -> str:
+        return f"{self.exam.exam_name} - {self.student}"
 
     class Meta:
         db_table = "Result"

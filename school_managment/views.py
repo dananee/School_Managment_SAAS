@@ -8,6 +8,7 @@ from school_managment.permissions import IsStaffOrAdminUser, IsTeacherOrAdminUse
 from .serialization import (
     AttendanceChartSerializers,
     AttendanceSerializer,
+    AttendancesSerializer,
     CustomPasswordResetConfirmSerializer,
     CustomTokenObtainPairSerializer,
     EventsSerializer,
@@ -74,6 +75,7 @@ from rest_framework.decorators import action
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 import datetime
+
 channel_layer = get_channel_layer()
 
 
@@ -81,7 +83,7 @@ def send_notification_by_role(role, message, data):
     print(f"ROLE {role} {data}")
     users_with_role = SchoolMembers.objects.filter(role=role)
     for school_member in users_with_role:
-         
+
         notification_serializer = NotificationSerializer(data=data)
 
         if notification_serializer.is_valid():
@@ -93,7 +95,7 @@ def send_notification_by_role(role, message, data):
             {
                 "type": "send_notification",
                 "message": message,
-                "timestamp": now ,  # Convert timestamp to ISO format
+                "timestamp": now,  # Convert timestamp to ISO format
             },
         )
 
@@ -132,7 +134,17 @@ class ClassViewSet(viewsets.ModelViewSet):
 class TeacherViewSet(viewsets.ModelViewSet):
     queryset = Teacher.objects.all()
     serializer_class = TeacherSerializer
-    permission_classes = [IsStaffOrAdminUser]
+    permission_classes_by_action = {
+        "default": [IsAuthenticated],
+        "retrieve": [IsAuthenticated, IsAdminUser,IsTeacherOrAdminUser],
+        "list": [IsAdminUser],
+        "create": [IsAdminUser],
+        "update": [IsAdminUser],
+        "partial_update": [IsAdminUser],
+        "destroy": [
+            IsAdminUser,
+        ],
+    }
 
     def list(self, request):
         school_id = request.data.get("school_id")
@@ -186,9 +198,9 @@ class TeacherViewSet(viewsets.ModelViewSet):
 class StudentViewSet(viewsets.ModelViewSet):
 
     permission_classes_by_action = {
-        "default": [IsAdminUser],
+        "default": [IsStaffOrAdminUser],
         "retrieve": [IsTeacherOrAdminUser],
-        "list": [IsStaffOrAdminUser],
+        "list": [IsTeacherOrAdminUser],
         "create": [IsStaffOrAdminUser],
         "update": [IsStaffOrAdminUser],
         "partial_update": [IsStaffOrAdminUser],
@@ -216,8 +228,16 @@ class StudentViewSet(viewsets.ModelViewSet):
 
     def list(self, request):
         school_id = request.query_params.get("school_id")
-        
+
         queryset = Student.objects.filter(user__school=school_id)
+
+        serializer = StudentSerializer(queryset, many=True)
+        return Response(serializer.data)
+    
+    def retrieve(self, request,pk=None):
+         
+
+        queryset = Student.objects.filter(classe=pk)
 
         serializer = StudentSerializer(queryset, many=True)
         return Response(serializer.data)
@@ -543,7 +563,7 @@ class AttendanceView(viewsets.ModelViewSet):
 
 
 class NotificationView(viewsets.ModelViewSet):
-    
+
     queryset = Notification.objects.order_by("-timestamp")
     serializer_class = NotificationSerializer
 
@@ -556,29 +576,33 @@ class NotificationView(viewsets.ModelViewSet):
 
     def retrieve(self, request, pk=None):
 
-        queryset = self.queryset.model.objects.filter(role=pk).order_by(
-            "-timestamp"
-        )
+        queryset = self.queryset.model.objects.filter(role=pk).order_by("-timestamp")
 
         serializer = self.serializer_class(queryset, many=True)
 
         return Response(serializer.data)
-
-     
 
 
 class ResultView(viewsets.ModelViewSet):
 
     queryset = Result.objects.all()
     serializer_class = ResultSerializers
+    permission_classes = [IsStaffOrAdminUser]
 
     def list(self, request):
-        school_id = request.data.get("school_id")
+        school_id = request.query_params.get("school_id")
+        teacher_id = request.query_params.get("teacher_id")
         queryset = self.queryset.model.objects.filter(student__user__school=school_id)
 
         serializer = self.serializer_class(queryset, many=True)
         return Response(serializer.data)
 
+    def retrieve(self, request, pk=None):
+ 
+        queryset = self.queryset.model.objects.filter(teacher=pk)
+
+        serializer = self.serializer_class(queryset, many=True)
+        return Response(serializer.data)
 
 class StaffView(viewsets.ModelViewSet):
 
@@ -602,11 +626,7 @@ class StaffView(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
-class StudentPerformanceViewSet(viewsets.ModelViewSet):
-    queryset = Student.objects.all()
-    serializer_class = PerformanceSerializer
-
+ 
 
 class ExamViewSet(viewsets.ModelViewSet):
     queryset = Exam.objects.all()
@@ -618,10 +638,166 @@ class ExamViewSet(viewsets.ModelViewSet):
         queryset = Exam.objects.filter(school=school_id)
         serializer = ExamSerializers(queryset, many=True)
         return Response(serializer.data)
-    
-    def retrieve(self, request,pk=None):
+
+    def retrieve(self, request, pk=None):
         school_id = request.query_params.get("school_id")
         teacher_id = request.query_params.get("teacher_id")
-        queryset = Exam.objects.filter(school=school_id,teacher__user__id=teacher_id)
+        queryset = Exam.objects.filter(school=school_id, teacher__user__id=teacher_id)
         serializer = ExamSerializers(queryset, many=True)
+        return Response(serializer.data)
+
+
+from django.http import JsonResponse
+ 
+from datetime import datetime
+
+
+class AttendanceChartView(viewsets.ModelViewSet):
+    permission_classes = [IsStaffOrAdminUser]
+    def list(self, request, *args, **kwargs):
+        school_id = request.query_params.get("school_id")
+
+        attendance_data = Attendance.objects.filter(school=school_id)
+
+        # Serialize data
+        serializer = AttendancesSerializer(attendance_data, many=True)
+
+        # Process data to get count of students present on each date
+        chart_data = {}
+        for attendance in serializer.data:
+            date_str = attendance["date"]
+            date = datetime.strptime(
+                date_str, "%Y-%m-%dT%H:%M:%S.%fZ"
+            ).date()
+            id = attendance["id"]  
+        
+            # chart_data["id"] = id
+            if date in chart_data:
+                chart_data[date]['num_students'] += len(attendance["student"])
+            else:
+                chart_data[date] = {
+                    'id': attendance['id'],
+                    'date': date.strftime('%Y-%m-%d'),
+                    'num_students': len(attendance['student'])
+                }
+
+        # Convert data to format suitable for chart (list of dictionaries)
+        chart_data_list = [
+            num_students
+            for   date, num_students in chart_data.items()
+        ]
+
+        return JsonResponse(chart_data_list, safe=False)
+        
+    def retrieve(self, request, pk=None):
+     
+
+        attendance_data = Attendance.objects.filter(teacher=pk)
+
+        # Serialize data
+        serializer = AttendancesSerializer(attendance_data, many=True)
+
+        # Process data to get count of students present on each date
+        chart_data = {}
+        for attendance in serializer.data:
+            date_str = attendance["date"]
+            date = datetime.strptime(
+                date_str, "%Y-%m-%dT%H:%M:%S.%fZ"
+            ).date()
+            id = attendance["id"]  
+        
+            # chart_data["id"] = id
+            if date in chart_data:
+                chart_data[date]['num_students'] += len(attendance["student"])
+            else:
+                chart_data[date] = {
+                    'id': attendance['id'],
+                    'date': date.strftime('%Y-%m-%d'),
+                    'num_students': len(attendance['student'])
+                }
+
+        # Convert data to format suitable for chart (list of dictionaries)
+        chart_data_list = [
+            num_students
+            for   date, num_students in chart_data.items()
+        ]
+
+        return JsonResponse(chart_data_list, safe=False)
+
+class PerformanceView(viewsets.ModelViewSet):
+    permission_classes = [IsStaffOrAdminUser]
+
+    def list(self,request):
+        school_id = request.query_params.get("school_id")
+        result_data = Result.objects.filter(exam__school=school_id)
+        serializer = ResultSerializers(result_data,many=True)
+        # Process data to get scores for each date
+        chart_data = {}
+        for result in serializer.data: 
+            date = result["date"]
+            if date in chart_data:
+                chart_data[date]['scores'].append(result["score"])
+            else:
+                chart_data[date] = {
+                    'date': datetime.strptime(date ,'%Y-%m-%d'),
+                    'scores': [result["score"]]
+                }
+
+        # Calculate average score for each date
+        for date, data in chart_data.items():
+            average_score = sum(data['scores']) / len(data['scores'])
+            chart_data[date]['average_score'] = average_score
+
+        # Convert data to format suitable for chart (list of dictionaries)
+        chart_data_list = list(chart_data.values())
+
+        return JsonResponse(chart_data_list, safe=False)
+    
+
+    def retrieve(self, request, pk=None):
+       
+        result_data = Result.objects.filter(teacher=pk)
+        serializer = ResultSerializers(result_data,many=True)
+        # Process data to get scores for each date
+        chart_data = {}
+        for result in serializer.data:
+            date = result["date"]
+            if date in chart_data:
+                chart_data[date]['scores'].append(result["score"])
+            else:
+                chart_data[date] = {
+                    'date': datetime.strptime(date ,'%Y-%m-%d'),
+                    'scores': [result["score"]]
+                }
+
+        # Calculate average score for each date
+        for date, data in chart_data.items():
+            average_score = sum(data['scores']) / len(data['scores'])
+            chart_data[date]['average_score'] = average_score
+
+        # Convert data to format suitable for chart (list of dictionaries)
+        chart_data_list = list(chart_data.values())
+
+        return JsonResponse(chart_data_list, safe=False)
+
+class StudentByTeacherViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsStaffOrAdminUser]
+    def list(self, request):
+        teacher_id = request.query_params.get('teacher_id')
+
+        if teacher_id is None:
+            return Response({"error": "Please provide a 'teacher_id' parameter."}, status=400)
+
+        try:
+            teacher = Teacher.objects.get(id=teacher_id)
+        except Teacher.DoesNotExist:
+            return Response({"error": f"Teacher with id {teacher_id} does not exist."}, status=404)
+
+        # Retrieve all classes taught by the teacher
+        classes_taught = teacher.teaching_classes.all()
+
+        # Retrieve all students in those classes
+        students_taught = Student.objects.filter(classe__in=classes_taught)
+
+        serializer = StudentSerializer(students_taught, many=True)
         return Response(serializer.data)
