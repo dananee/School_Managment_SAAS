@@ -35,7 +35,7 @@ SECRET_KEY = 'django-insecure-ha33*fs+2f^9%1mf2@gzkxo3(1=ex$*t@xj%w*!b83ka&ebgha
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['*','.vercel.app']
+ALLOWED_HOSTS = ['*' ]
 
 
 
@@ -100,8 +100,8 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'school_managment_saas.wsgi.app'
-ASGI_APPLICATION = 'school_managment_saas.asgi.app'
+WSGI_APPLICATION = 'school_managment_saas.wsgi.application'
+ASGI_APPLICATION = 'school_managment_saas.asgi.application'
 
 CHANNEL_LAYERS = {
     "default": {"BACKEND":"channels.layers.InMemoryChannelLayer"}
@@ -110,28 +110,18 @@ CHANNEL_LAYERS = {
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.mysql',
-#         'NAME': 'school_managment_db',
-#         'HOST': '127.0.0.1',
-#         'PORT': '3306',
-#         'USER': 'root',
-#         'PASSWORD': 'mythologie'
-
-#     }
-# }
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'railway',
-        'HOST': 'viaduct.proxy.rlwy.net',
-        'PORT': '56976',
+        'NAME': 'school_managment_db',
+        'HOST': '127.0.0.1',
+        'PORT': '3306',
         'USER': 'root',
-        'PASSWORD': 'gPCcDITwzwTfcYEubDRyMvqXZBNhhfZG'
+        'PASSWORD': 'mythologie'
 
     }
 }
+ 
 
 
 # Password validation

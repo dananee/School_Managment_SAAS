@@ -302,8 +302,8 @@ class Exam(models.Model):
         verbose_name = "Exam"
         verbose_name_plural = "Exams"
 
-    def __str__(self) -> str:
-        return f"{self.exam_name} - {self.school}"
+    def __str__(self):
+        return f"{self.exam_name} - {self.teacher}"
 
     # Additional fields, relationships, if needed
 
