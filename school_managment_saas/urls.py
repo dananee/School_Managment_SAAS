@@ -23,7 +23,7 @@ from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 
-from school_managment.views import CurrentUserView, MyTokenObtainPairView, password_reset_confirm, activation_email_account
+from school_managment.views import CurrentUserView, HomePage, LoginPage, MyTokenObtainPairView, password_reset_confirm, activation_email_account
 
 schema_view = get_schema_view(
     openapi.Info(
@@ -43,6 +43,8 @@ schema_view = get_schema_view(
 
 
 urlpatterns = [
+    path("", HomePage.as_view()),
+    path("login/", LoginPage.as_view()),
     path('admin/', admin.site.urls),
     re_path(
         r"^api/v1/docs/$",

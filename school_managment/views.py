@@ -5,6 +5,7 @@ from rest_framework.generics import ListCreateAPIView
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
 from school_managment.permissions import IsStaffOrAdminUser, IsTeacherOrAdminUser
+from school_managment.utils import send_fcm_notification
 from .serialization import (
     AttendanceChartSerializers,
     AttendanceSerializer,
@@ -13,6 +14,8 @@ from .serialization import (
     CustomTokenObtainPairSerializer,
     EventsSerializer,
     ExamSerializers,
+    FCMDeviceSerializer,
+   
     NotificationSerializer,
     ParentSerializer,
     PerformanceSerializer,
@@ -28,11 +31,17 @@ from .serialization import (
     SubjectSerializer,
     ClassRoomSerializer,
 )
+
+
+
+
 from .models import (
     Attendance,
     ClassSchedule,
     Events,
     Exam,
+    FCMDevice,
+   
     Notification,
     Parent,
     Person,
@@ -75,8 +84,17 @@ from rest_framework.decorators import action
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 import datetime
-
+from django.views.generic import TemplateView
 channel_layer = get_channel_layer()
+
+
+class HomePage(TemplateView):
+    template_name = "site/index.html"
+
+
+class LoginPage(TemplateView):
+    template_name = "site/login.html"
+
 
 
 def send_notification_by_role(role, message, data):
@@ -101,7 +119,16 @@ def send_notification_by_role(role, message, data):
 
 
 class SchoolDataView(viewsets.ModelViewSet):
-
+    http_method_names = ["patch", "get", "post" , "put"]
+    permission_classes_by_action = {
+        "default": [IsAdminUser],
+        "retrieve": [IsAuthenticated, IsAdminUser],
+        "list": [IsAdminUser],
+        "create": [IsAdminUser],
+        "update": [IsAdminUser],
+        "partial_update": [IsAdminUser],
+         
+    }
     queryset = SchoolDataModel.objects.all()
     serializer_class = SchoolDataSerializer
 
@@ -147,7 +174,8 @@ class TeacherViewSet(viewsets.ModelViewSet):
     }
 
     def list(self, request):
-        school_id = request.data.get("school_id")
+        school_id = request.query_params.get("school_id")
+        print(school_id)
         queryset = Teacher.objects.filter(user__school=school_id)
 
         serializer = TeacherSerializer(queryset, many=True)
@@ -371,10 +399,10 @@ class PersonViewSet(viewsets.ViewSet):
 class SchoolMembersViewSet(viewsets.ModelViewSet):
     http_method_names = ["patch", "get", "post", "delete", "put"]
     permission_classes_by_action = {
-        "default": [IsAuthenticated],
+        "default": [],
         "retrieve": [IsAuthenticated, IsAdminUser],
         "list": [IsAdminUser],
-        "create": [IsAdminUser],
+        "create": [],
         "update": [IsAdminUser],
         "partial_update": [IsAdminUser],
         "destroy": [
@@ -575,8 +603,8 @@ class NotificationView(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     def retrieve(self, request, pk=None):
-
-        queryset = self.queryset.model.objects.filter(role=pk).order_by("-timestamp")
+        school_id = request.query_params.get("school_id")
+        queryset = self.queryset.model.objects.filter(role=pk,sender__school=school_id).order_by("-timestamp")
 
         serializer = self.serializer_class(queryset, many=True)
 
@@ -801,3 +829,26 @@ class StudentByTeacherViewSet(viewsets.ModelViewSet):
 
         serializer = StudentSerializer(students_taught, many=True)
         return Response(serializer.data)
+    
+class FCMDeviceViewSet(viewsets.ModelViewSet):
+    queryset = FCMDevice.objects.all()
+    serializer_class = FCMDeviceSerializer
+ 
+    def get_queryset(self):
+        return self.queryset.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+ 
+
+
+@api_view(['POST'])
+def send_notification(request):
+    user = request.data.get('user')
+    title = request.data.get('title')
+    body = request.data.get('body')
+    data = request.data.get('data', {})
+
+    response = send_fcm_notification(user, title, body, data)
+    return Response({'success': response.success_count, 'failure': response.failure_count})
+

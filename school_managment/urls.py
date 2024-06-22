@@ -8,6 +8,7 @@ from .views import (
     ClassViewSet,
     EventsView,
     ExamViewSet,
+    FCMDeviceViewSet,
     MyTokenObtainPairView,
     NotificationView,
     ParentViewSet,
@@ -23,6 +24,7 @@ from .views import (
     StudentViewSet,
     SubjectViewSet,
     TeacherViewSet,
+    send_notification,
     
 )
 
@@ -51,8 +53,12 @@ router.register(r"exam", ExamViewSet, basename="exams")
 router.register(r"performence", PerformanceView, basename="perform-chart")
 router.register(r"attedchart", AttendanceChartView, basename="attend-chart")
 router.register(r"testudent", StudentByTeacherViewSet, basename="filter-student")
+router.register(r'fcm-devices', FCMDeviceViewSet, basename='fcmdevice')
+
 
 urlpatterns = [
+        path('send-notification/', send_notification, name='send-notification'),
+
     path("login/", MyTokenObtainPairView.as_view(), name="token_obtain_pair"),
  
  

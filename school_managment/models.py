@@ -123,7 +123,7 @@ class SchoolMembers(models.Model):
     profile_image = models.ImageField(upload_to=upload_to, blank=True, null=True)
     role = models.CharField(max_length=2, choices=Roles, default=Roles.STAFF)
     person = models.OneToOneField(Person, on_delete=models.CASCADE)
-    school = models.ForeignKey(SchoolDataModel, on_delete=models.CASCADE)
+    school = models.ForeignKey(SchoolDataModel, on_delete=models.CASCADE, null=True)
 
     class Meta:
         db_table = "SchoolMembers"
@@ -160,9 +160,8 @@ class Student(models.Model):
 
 
 class Parent(models.Model):
-    # Parent-specific fields
 
-    student = models.ForeignKey(Student, on_delete=models.CASCADE)
+    student = models.ManyToManyField(Student, related_name="parents", blank=False)
     user = models.OneToOneField(SchoolMembers, on_delete=models.CASCADE)
 
     class Meta:
@@ -171,7 +170,7 @@ class Parent(models.Model):
         verbose_name_plural = "Parents"
 
     def __str__(self) -> str:
-        return f"{self.user.id} - {self.student.user.person.email}"
+        return f"{self.user.id} -  "
 
 
 class Staff(models.Model):
@@ -250,15 +249,14 @@ class Attendance(models.Model):
     schedule = models.ForeignKey(
         "ClassSchedule", on_delete=models.CASCADE, null=True, blank=False
     )
-    student = models.ManyToManyField(
-        Student, related_name="student", blank=False,null=False
-    ) 
+    student = models.ManyToManyField(Student, related_name="student", blank=False)
     school = models.ForeignKey(
         SchoolDataModel, on_delete=models.CASCADE, null=False, blank=False
     )
     teacher = models.ForeignKey(
         Teacher, on_delete=models.CASCADE, null=False, blank=False
     )
+
     def __str__(self) -> str:
         return f"{self.id} - {self.date} - {self.school}"
 
@@ -286,7 +284,7 @@ class Exam(models.Model):
     exam_name = models.CharField(max_length=200)
     start_time = models.TimeField()
     end_time = models.TimeField()
-    teacher =  models.ForeignKey(
+    teacher = models.ForeignKey(
         Teacher, on_delete=models.CASCADE, null=True, blank=True
     )
     school = models.ForeignKey(
@@ -314,7 +312,7 @@ class Result(models.Model):
     score = models.FloatField()
     exam = models.ForeignKey(Exam, on_delete=models.CASCADE, null=True)
     student = models.ForeignKey(Student, on_delete=models.CASCADE, null=True)
-    teacher = models.ForeignKey(Teacher,on_delete=models.CASCADE,null=False)
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, null=False)
     # Additional fields, relationships, if needed
 
     def __str__(self) -> str:
@@ -402,6 +400,11 @@ class Events(models.Model):
         SchoolDataModel, on_delete=models.CASCADE, null=True, blank=True
     )
 
+    class Meta:
+
+        verbose_name = "Event"
+        verbose_name_plural = "Events"
+
     def __str__(self) -> str:
         return f"{self.event_name} - {self.school}"
 
@@ -416,6 +419,7 @@ class Notification(models.Model):
         max_length=2, choices=Status.choices, default=Status.IMPORTANT
     )
     read = models.BooleanField(default=False)
+
     class Meta:
         db_table = "Notification"
         verbose_name = "Notification"
@@ -423,3 +427,11 @@ class Notification(models.Model):
 
     def __str__(self) -> str:
         return f"{self.id} - {self.sender} - {self.role}"
+
+
+class FCMDevice(models.Model):
+    user = models.ForeignKey(SchoolMembers, on_delete=models.CASCADE)
+    token = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.token

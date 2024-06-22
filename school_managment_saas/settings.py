@@ -16,13 +16,17 @@ from pathlib import Path
 import os
 import environ
 
-env = environ.Env( DEBUG=(bool, False))
+import firebase_admin
+from firebase_admin import credentials
+
+
+env = environ.Env(DEBUG=(bool, False))
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 PROJECT_PATH = os.path.realpath(os.path.dirname(__file__))
 environ.Env.read_env(os.path.join(BASE_DIR, 'school_managment_saas/.env'))
 
- 
+
 SIGNING_KEY = env('SIGNING_KEY')
 
 
@@ -35,8 +39,7 @@ SECRET_KEY = 'django-insecure-ha33*fs+2f^9%1mf2@gzkxo3(1=ex$*t@xj%w*!b83ka&ebgha
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['*' ]
-
+ALLOWED_HOSTS = ['*']
 
 
 CSRF_TRUSTED_ORIGINS = ["http://127.0.0.1:8000"]
@@ -49,8 +52,20 @@ EMAIL_HOST_PASSWORD = "iubd hmzq zjri fnbr "
 EMAIL_USE_TLS = True
 
 
-# Application definition
+cred = credentials.Certificate(env('SERVICE_FIREBASE'))
+firebase_admin.initialize_app(cred)
 
+FCM_DJANGO_SETTINGS = {
+     # default: _('FCM Django')
+    # "APP_VERBOSE_NAME": "[string for AppConfig's verbose_name]",
+     # true if you want to have only one active device per registered user at a time
+     # default: False
+    "ONE_DEVICE_PER_USER": False,
+     # devices to which notifications cannot be sent,
+     # are deleted upon receiving error response from FCM
+     # default: False
+    "DELETE_INACTIVE_DEVICES":  False,
+}
 INSTALLED_APPS = [
     'daphne',
     'django.contrib.admin',
@@ -61,11 +76,12 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework_simplejwt',
-   
+
     'school_managment',
     'channels',
     'djoser',
     'corsheaders',
+    'fcm_django',
     'drf_yasg'
 
 ]
@@ -81,6 +97,19 @@ MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
 ]
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:8000",
+    "http://localhost:3000"
+]
+CORS_ALLOW_METHODS = (
+    "DELETE",
+    "GET",
+    "OPTIONS",
+    "PATCH",
+    "POST",
+    "PUT",
+)
 
 ROOT_URLCONF = 'school_managment_saas.urls'
 
@@ -104,7 +133,7 @@ WSGI_APPLICATION = 'school_managment_saas.wsgi.application'
 ASGI_APPLICATION = 'school_managment_saas.asgi.application'
 
 CHANNEL_LAYERS = {
-    "default": {"BACKEND":"channels.layers.InMemoryChannelLayer"}
+    "default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}
 }
 
 # Database
@@ -121,7 +150,6 @@ DATABASES = {
 
     }
 }
- 
 
 
 # Password validation
@@ -187,7 +215,7 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 REST_FRAMEWORK = {
-  
+
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ],
@@ -199,9 +227,8 @@ REST_FRAMEWORK = {
         'anon': '30/min',
         'user': '60/min'
     }
-     
-}
 
+}
 
 
 SIMPLE_JWT = {
@@ -212,15 +239,15 @@ SIMPLE_JWT = {
     # Change this to a strong, unique secret key
     'SIGNING_KEY': SIGNING_KEY,
     'AUTH_HEADER_TYPES': ('JWT',),
-   
+
     'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
 }
-
+DOMAIN = ('localhost:3000')
 DJOSER = {
     'USER_ID_FIELD': 'email',
     'PASSWORD_RESET_CONFIRM_URL': 'auth/reset-password/{uid}/{token}',
     'USERNAME_RESET_CONFIRM_URL': 'username/reset/confirm/?uid={email}&token={token}',
-    'ACTIVATION_URL': 'auth/activate/{uid}/{token}',
+    'ACTIVATION_URL': 'auth/activate/?uid={uid}&token={token}',
     'SEND_ACTIVATION_EMAIL': True,
     'SEND_CONFIRMATION_EMAIL': True,
     'PASSWORD_CHANGED_EMAIL_CONFIRMATION': True,
@@ -231,6 +258,6 @@ DJOSER = {
         "user": "school_managment.serialization.PersonSerializer",
         "current_user": "school_managment.serialization.PersonSerializer",
         'password_reset_confirm': 'school_managment.serialization.CustomPasswordResetConfirmSerializer',
-        'token_create' : 'school_managment.serialization.CustomTokenObtainPairSerializer'
+        'token_create': 'school_managment.serialization.CustomTokenObtainPairSerializer'
     },
 }

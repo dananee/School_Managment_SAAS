@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>EduSign - Login</title>
+    <meta name="description" content="" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+  </head>
+  <body>
+    <h3>Signup Form</h3>
+    <form hx-post="/login">
+      {% csrf_token %}
+      <div hx-target="this" hx-swap="outerHTML">
+        <label>Email Address</label>
+        <input name="email" hx-post="/login/" hx-indicator="#ind" />
+        <img id="ind" src="/img/bars.svg" class="htmx-indicator" />
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" class="form-control" name="password" />
+      </div>
+      {% if form.errors %} {% for field in form %}
+      <p>{{error|escape}}</p>
+      {% endfor %} {% endif %}
+      <button class="btn btn-default">Submit</button>
+    </form>
+  </body>
+</html>

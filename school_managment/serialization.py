@@ -5,6 +5,7 @@ from .models import (
     ClassSchedule,
     Events,
     Exam,
+    FCMDevice,
     Notification,
     Parent,
     Result,
@@ -177,6 +178,7 @@ class SchoolMembersSerializer(serializers.ModelSerializer):
         fields = "__all__"
         extra_kwargs = {
             "school": {"required": False},
+            "school_id": {"required": False},
             "profile_image": {"required": False},
         }
 
@@ -224,7 +226,7 @@ class SchoolMembersSerializer(serializers.ModelSerializer):
 
 class ParentSerializer(serializers.ModelSerializer):
     user = SchoolMembersSerializer()
-
+    
     class Meta:
         model = Parent
         fields = "__all__"
@@ -232,12 +234,18 @@ class ParentSerializer(serializers.ModelSerializer):
 
 class TeacherSerializer(serializers.ModelSerializer):
     user = SchoolMembersSerializer()
-    teaching_classes = ClassSerializer(many=True)
+    teaching_classes_id =  serializers.PrimaryKeyRelatedField(queryset=Classe.objects.all(), source="teaching_classes",many=True,write_only=True)
 
     class Meta:
         model = Teacher
-        fields = "__all__"  # Add other fields as needed
-        extra_kwargs = {"teaching_classes": {"required": True}}
+        fields = ("id","user","qualification","teaching_classes_id","experience","specialization","address","joining_date")  # Add other fields as needed
+       
+       
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation["teaching_classes"] = ClassSerializer(instance.teaching_classes,many=True).data
+        return representation
+    
 
     def update(self, instance, validated_data):
         user_data = validated_data.pop("user")
@@ -280,13 +288,11 @@ class StudentSerializer(serializers.ModelSerializer):
     classe_id = serializers.PrimaryKeyRelatedField(
         queryset=Classe.objects.all(), source="classe", write_only=True
     )
-    parent = ParentSerializer(
-        source="parent_set", many=True, read_only=True
-    )  # Adjust source to match the related_name in the Parent model
+     
 
     class Meta:
         model = Student
-        fields = ("id", "user", "classe_id", "parent")  # Add other fields as needed
+        fields = ("id", "user", "classe_id")  # Add other fields as needed
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
@@ -384,10 +390,11 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         data["is_staff"] = self.user.is_staff
         data["is_owner"] = self.user.is_owner
 
-        member = SchoolMembers.objects.get(person_id=self.user.id)
-        serializers = SchoolMembersSerializer(instance=member)
-
-        data["data"] = serializers.data
+        ismember = SchoolMembers.objects.filter(person_id=self.user.id).exists()
+        if(ismember):
+            member =  SchoolMembers.objects.get(person_id=self.user.id)
+            serializers = SchoolMembersSerializer(instance=member)
+            data["data"] = serializers.data
 
         return data
 
@@ -414,7 +421,7 @@ class AttendanceSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Attendance
-        fields = ("id", "student", "school", "schedule_id", "date","teacher")
+        fields = ("id", "student", "school", "schedule_id", "date", "teacher")
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
@@ -495,11 +502,11 @@ class AttendanceChartSerializers(serializers.ModelSerializer):
 
 
 class ResultSerializers(serializers.ModelSerializer):
-    student_id =  serializers.PrimaryKeyRelatedField(
-        queryset= Student.objects.all(), source="student", write_only=True
+    student_id = serializers.PrimaryKeyRelatedField(
+        queryset=Student.objects.all(), source="student", write_only=True
     )
     exam_id = serializers.PrimaryKeyRelatedField(
-        queryset= Exam.objects.all(), source="exam", write_only=True
+        queryset=Exam.objects.all(), source="exam", write_only=True
     )
 
     def to_representation(self, instance):
@@ -507,7 +514,7 @@ class ResultSerializers(serializers.ModelSerializer):
         representation["student"] = StudentSerializer(instance.student).data
         representation["exam"] = ExamSerializers(instance.exam).data
         return representation
-    
+
     class Meta:
         model = Result
         fields = "__all__"
@@ -556,4 +563,9 @@ class PerformanceSerializer(serializers.ModelSerializer):
 class AttendancesSerializer(serializers.ModelSerializer):
     class Meta:
         model = Attendance
-        fields = ['id','date', 'student']
+        fields = ["id", "date", "student"]
+
+class FCMDeviceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FCMDevice
+        fields = ('user', 'token')
