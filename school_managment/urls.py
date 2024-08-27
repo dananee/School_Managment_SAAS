@@ -24,7 +24,7 @@ from .views import (
     StudentViewSet,
     SubjectViewSet,
     TeacherViewSet,
-    send_notification,
+    # send_notification,
     
 )
 
@@ -57,7 +57,7 @@ router.register(r'fcm-devices', FCMDeviceViewSet, basename='fcmdevice')
 
 
 urlpatterns = [
-        path('send-notification/', send_notification, name='send-notification'),
+        # path('send-notification/', send_notification, name='send-notification'),
 
     path("login/", MyTokenObtainPairView.as_view(), name="token_obtain_pair"),
  

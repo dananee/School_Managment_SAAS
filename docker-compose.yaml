@@ -1,0 +1,44 @@
+services:
+  db:
+    container_name: school-db-container
+    image: mysql:8
+    restart: always
+    ports:
+      - "3307:3306"
+    env_file:
+      - ./.env
+    environment:
+      - MYSQL_ALLOW_EMPTY_PASSWORD=0
+      - MYSQL_RANDOM_ROOT_PASSWORD=1
+      - MYSQL_ROOT_PASSWORD=${SQL_ROOT_PASSWORD}
+      - MYSQL_USER=${SQL_USER}
+      - MYSQL_PASSWORD=${SQL_PASSWORD}
+      - MYSQL_DATABASE=${SQL_DATABASE}
+    volumes:
+      - /tmp/school_managment_saas/mysqld:/var/run/mysqld/
+    
+  django_project:
+      image: school-image
+      
+      build: 
+        context: .
+        dockerfile: Dockerfile
+      command: bash -c "python manage.py makemigrations && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+      env_file:
+        - .env
+      environment:
+        - DATABASE_URL=mysql://${SQL_USER}:${SQL_PASSWORD}@db:3306/${SQL_DATABASE}
+      ports:
+        - "8001:8000"
+      volumes:
+        - .:/school_managment_saas
+        - /tmp/school_managment_saas/mysqld:/var/run/mysqld/
+      depends_on:
+        - db
+      links:
+        - db
+
+volumes:
+    db:
+      name: school-docker-env
+      driver: local  

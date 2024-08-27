@@ -6,7 +6,8 @@ from django.contrib.auth.models import AbstractUser, BaseUserManager, AbstractBa
 from django.contrib.auth.models import Permission, Group
 from django.contrib.auth.hashers import make_password
 from django.core.validators import MaxValueValidator, MinValueValidator
-
+from phonenumber_field.modelfields import PhoneNumberField
+    
 
 def upload_to(instance, filename):
     return f"images/{filename}"
@@ -91,7 +92,7 @@ class Person(AbstractBaseUser):
     last_login = models.DateTimeField(auto_now_add=True, blank=True)
     first_name = models.CharField(max_length=255)
     last_name = models.CharField(max_length=255)
-    phone = models.CharField(max_length=200, null=False)
+    phone = PhoneNumberField(null=True, blank=True, unique=False)
 
     gender = models.CharField(max_length=1, choices=Genders, default=Genders.MEN)
     email = models.EmailField(unique=True)
@@ -161,7 +162,7 @@ class Student(models.Model):
 
 class Parent(models.Model):
 
-    student = models.ManyToManyField(Student, related_name="parents", blank=False)
+    student = models.ManyToManyField(Student, related_name="parents", blank=True,default=[])
     user = models.OneToOneField(SchoolMembers, on_delete=models.CASCADE)
 
     class Meta:
@@ -203,7 +204,7 @@ class Classe(models.Model):
         verbose_name_plural = "Classes"
 
     def __str__(self) -> str:
-        return f"{self.school.name} - {self.class_name} {self.grade}"
+        return f"{self.id} -> {self.school.name} - {self.class_name} {self.grade}"
 
 
 class Teacher(models.Model):
@@ -224,7 +225,7 @@ class Teacher(models.Model):
         verbose_name_plural = "Teachers"
 
     def __str__(self):
-        return f"{self.user.person.email}'s Profile"
+        return f"{self.id} -> {self.user.person.email}'s Profile"
 
 
 class Subject(models.Model):
@@ -334,7 +335,7 @@ class ClassRoom(models.Model):
         Classe, related_name="classrooms_taught", blank=True
     )
     assigned_teacher = models.ForeignKey(
-        Teacher, on_delete=models.SET_NULL, null=True, blank=True
+        Teacher, on_delete=models.CASCADE, null=True, blank=True
     )
     subjects_taught = models.ForeignKey(
         Subject,
@@ -343,7 +344,7 @@ class ClassRoom(models.Model):
         blank=True,
         null=True,
     )
-    # Add other fields specific to the ClassRoom model if needed
+  
     school = models.ForeignKey(
         SchoolDataModel, on_delete=models.CASCADE, null=True, blank=True
     )
@@ -354,7 +355,7 @@ class ClassRoom(models.Model):
         verbose_name_plural = "Classe Rooms"
 
     def __str__(self):
-        return f"{self.room_name}  "
+        return f"{self.room_name} {self.assigned_teacher.user.person.email} "
 
 
 class ClassSchedule(models.Model):

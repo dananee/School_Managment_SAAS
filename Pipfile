@@ -61,10 +61,15 @@ pyopenssl = "==24.1.0"
 pyyaml = "==6.0.1"
 service-identity = "==24.1.0"
 toml = "==0.10.2"
-twisted = {extras = ["tls"], version = "==24.3.0"}
 txaio = "==23.1.1"
 uritemplate = "==4.1.1"
 zope-interface = "==6.3"
+django-phonenumber-field = "*"
+twisted = {extras = ["tls"], version = "==24.3.0"}
+django-phonenumbers = "*"
+django-unfold = "*"
+gunicorn = "*"
+python-dotenv = "*"
 
 [dev-packages]
 

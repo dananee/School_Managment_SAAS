@@ -17,7 +17,7 @@ class IsStaffOrAdminUser(permissions.BasePermission):
     """
 
     def has_permission(self, request, view):
-        return request.user.is_authenticated and (request.user.is_staff or request.user.is_superuser)
+        return request.user.is_authenticated and  request.user.is_staff  
 
 class IsStudentOrAdminUser(permissions.BasePermission):
     """
