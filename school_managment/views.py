@@ -287,7 +287,7 @@ class ParentViewSet(viewsets.ModelViewSet):
     permission_classes = [IsStaffOrAdminUser]
 
     def list(self, request):
-        school_id = request.data.get("school_id")
+        school_id = request.query_params.get("school_id")
         queryset = Parent.objects.filter(user__school=school_id)
 
         serializer = ParentSerializer(queryset, many=True)
@@ -614,7 +614,7 @@ class AttendanceView(viewsets.ModelViewSet):
     serializer_class = AttendanceSerializer
 
     def list(self, request):
-        school_id = request.data.get("school_id")
+        school_id = request.query_params.get("school_id")
         queryset = self.queryset.model.objects.filter(school=school_id)
 
         serializer = self.serializer_class(queryset, many=True)
@@ -836,7 +836,7 @@ class PerformanceView(viewsets.ModelViewSet):
 
 
 class StudentByTeacherViewSet(viewsets.ModelViewSet):
-    permission_classes = [IsStaffOrAdminUser]
+    # permission_classes = [IsStaffOrAdminUser]
 
     def list(self, request):
         teacher_id = request.query_params.get("teacher_id")

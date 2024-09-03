@@ -140,7 +140,7 @@ DATABASES = {
     "default": {
         "ENGINE":os.environ.get("SQL_ENGINE",  "django.db.backends.mysql"),
         "NAME":  os.environ.get("SQL_DATABASE",'school_managment_db' ),
-        "HOST": "db",
+        "HOST": os.environ.get("SQL_HOST",'db' ),
         "PORT": os.environ.get("SQL_PORT", "3306"),
         "USER": os.environ.get("SQL_USER",'root'),
         "PASSWORD": os.environ.get("SQL_PASSWORD",'mythologie'),

@@ -4,7 +4,7 @@ services:
     image: mysql:8
     restart: always
     ports:
-      - "3307:3306"
+      - "3308:3306"
     env_file:
       - ./.env
     environment:
@@ -15,7 +15,8 @@ services:
       - MYSQL_PASSWORD=${SQL_PASSWORD}
       - MYSQL_DATABASE=${SQL_DATABASE}
     volumes:
-      - /tmp/school_managment_saas/mysqld:/var/run/mysqld/
+      - /tmp/school_managment_saas/mysqld:/var/lib/mysqld/
+       
     
   django_project:
       image: school-image
@@ -29,10 +30,11 @@ services:
       environment:
         - DATABASE_URL=mysql://${SQL_USER}:${SQL_PASSWORD}@db:3306/${SQL_DATABASE}
       ports:
-        - "8001:8000"
+        - "8000:8000"
       volumes:
         - .:/school_managment_saas
-        - /tmp/school_managment_saas/mysqld:/var/run/mysqld/
+        - /tmp/school_managment_saas/mysqld:/var/lib/mysqld/
+        
       depends_on:
         - db
       links:
