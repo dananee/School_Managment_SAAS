@@ -11,7 +11,7 @@ from rest_framework.settings import api_settings
 
 # from school_managment.utils import  send_fcm_notification
 
-from  school_managment.pagination import StandardResultsSetPagination
+from school_managment.pagination import StandardResultsSetPagination, CustomPagination
 
 from .serialization import (
     AttendanceChartSerializers,
@@ -259,10 +259,22 @@ class StudentViewSet(viewsets.ModelViewSet):
     def list(self, request):
         school_id = request.query_params.get("school_id")
 
-        queryset = Student.objects.filter(user__school=school_id)
+        
+         # Get the queryset
+        queryset = self.get_queryset().filter(user__school=school_id)
+        
+        # Instantiate the paginator
+        paginator = PageNumberPagination()
+        paginator.page_size = 5  # Customize page size here or use a default setting
 
-        serializer = StudentSerializer(queryset, many=True)
-        return Response(serializer.data)
+        # Paginate the queryset
+        paginated_queryset = paginator.paginate_queryset(queryset, request)
+
+        # Serialize the paginated data
+        serializer = self.get_serializer(paginated_queryset, many=True)
+        
+        # Return paginated response
+        return paginator.get_paginated_response(serializer.data)
 
     def retrieve(self, request, pk=None):
 
@@ -314,7 +326,7 @@ class ClassRoomViewSet(viewsets.ModelViewSet):
     # permission_classes = [IsStaffOrAdminUser]
     queryset = ClassRoom.objects.all()
     serializer_class = ClassRoomSerializer
-    pagination_class = LimitOffsetPagination
+    pagination_class = CustomPagination
 
     def list(self, request):
         print(api_settings.DEFAULT_PAGINATION_CLASS)
@@ -369,12 +381,12 @@ class PersonViewSet(viewsets.ViewSet):
 
     def list(self, request):
         queryset = Person.objects.all()
-        
+
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
             return self.get_paginated_response(serializer.data)
-        
+
         serializer = PersonSerializer(queryset, many=True)
         return Response(serializer.data)
 
@@ -704,9 +716,13 @@ class ExamViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     def retrieve(self, request, pk=None):
-        school_id = request.query_params.get("school_id")
-        teacher_id = request.query_params.get("teacher_id")
-        queryset = Exam.objects.filter(school=school_id, teacher__user__id=teacher_id)
+        classe_id = request.query_params.get("classe_id")
+        teacher_id = request.query_params.get(
+            "teacher_id",
+        )
+        queryset = Exam.objects.filter(
+            class_association=classe_id, teacher__user__id=teacher_id
+        )
         serializer = ExamSerializers(queryset, many=True)
         return Response(serializer.data)
 
