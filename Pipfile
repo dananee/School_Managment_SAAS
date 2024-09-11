@@ -32,7 +32,7 @@ typing-extensions = "==4.9.0"
 urllib3 = "==2.1.0"
 webencodings = "==0.5.1"
 pipfile = "==0.0.2"
-mysqlclient = "==2.2.4"
+mysqlclient = "*"
 pillow = "==10.3.0"
 django-mysql = "==4.13.0"
 timedelta = "==2020.12.3"
@@ -70,6 +70,8 @@ django-phonenumbers = "*"
 django-unfold = "*"
 gunicorn = "*"
 python-dotenv = "*"
+htmx = "*"
+whitenoise = "*"
 
 [dev-packages]
 

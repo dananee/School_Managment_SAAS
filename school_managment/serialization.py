@@ -80,13 +80,39 @@ class Base64ImageField(serializers.ImageField):
         return extension
 
 
-class CustomPasswordResetConfirmSerializer(DjoserPasswordResetConfirmSerializer):
-    def validate_uid(self, uid):
+class CustomPasswordResetConfirmSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    token = serializers.CharField()
+    new_password = serializers.CharField()
+    re_new_password = serializers.CharField()
+
+    def validate(self, data):
+        email = data.get('email')
+        token = data.get('token')
+        new_password = data.get('new_password')
+        re_new_password = data.get('re_new_password')
+
+        # Validate that the passwords match
+        if new_password != re_new_password:
+            raise serializers.ValidationError("Passwords do not match.")
+
+        # Validate the token and user
         try:
-            user = Person.objects.get(id=uid)
+            user = Person.objects.get(email=email)
         except Person.DoesNotExist:
-            raise serializers.ValidationError("Invalid email address")
-        return user
+            raise serializers.ValidationError("Person with this email does not exist.")
+
+        if not default_token_generator.check_token(user, token):
+            raise serializers.ValidationError("Invalid or expired token.")
+
+        return data
+
+    def save(self, **kwargs):
+        email = self.validated_data['email']
+        new_password = self.validated_data['new_password']
+        user = Person.objects.get(email=email)
+        user.set_password(new_password)
+        user.save()
 
 
 class SchoolDataSerializer(serializers.ModelSerializer):

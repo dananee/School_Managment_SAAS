@@ -9,6 +9,9 @@ from rest_framework.pagination import PageNumberPagination, LimitOffsetPaginatio
 
 from rest_framework.settings import api_settings
 
+
+from django.contrib.auth import get_user_model
+from django.shortcuts import get_object_or_404, render
 # from school_managment.utils import  send_fcm_notification
 
 from school_managment.pagination import StandardResultsSetPagination, CustomPagination
@@ -100,6 +103,9 @@ class LoginPage(TemplateView):
     template_name = "site/login.html"
 
 
+
+
+
 def send_notification_by_role(role, message, data):
 
     users_with_role = SchoolMembers.objects.filter(role=role)
@@ -177,11 +183,12 @@ class TeacherViewSet(viewsets.ModelViewSet):
 
     def list(self, request):
         school_id = request.query_params.get("school_id")
-
         queryset = Teacher.objects.filter(user__school=school_id)
 
-        serializer = TeacherSerializer(queryset, many=True)
-        return Response(serializer.data)
+        paginator = CustomPagination()
+        paginated_queryset = paginator.paginate_queryset(queryset, request)
+        serializer = TeacherSerializer(paginated_queryset, many=True)
+        return paginator.get_paginated_response(serializer.data)
 
     def retrieve(self, request, pk=None):
         try:
@@ -527,6 +534,7 @@ class CustomPasswordResetConfirmView(viewsets.ViewSet):
 def password_reset_confirm(request, uidb64, token):
     try:
         uid = force_str(urlsafe_base64_decode(uidb64))
+        print(f"UID =======>", uid )
         user = get_object_or_404(Person, pk=uid)
     except (ValueError, Http404):
         raise Http404("Invalid user ID")
@@ -547,7 +555,7 @@ def password_reset_confirm(request, uidb64, token):
                 # Passwords do not match, render the password reset form with an error
                 return render(
                     request,
-                    "password_reset.html",
+                    "reset_password.html",
                     {
                         "uidb64": uidb64,
                         "token": token,
@@ -556,7 +564,7 @@ def password_reset_confirm(request, uidb64, token):
                 )
         else:
             return render(
-                request, "password_reset.html", {"uidb64": uidb64, "token": token}
+                request, "reset_password.html", {"uidb64": uidb64, "token": token}
             )
     else:
         raise Http404("Invalid password reset link.")
@@ -579,6 +587,27 @@ def activation_email_account(request, uidb64, token):
     else:
         raise Http404("Invalid password reset link.")
 
+
+def reset_password_page(request, uidb64, token):
+    User = get_user_model()
+    try:
+        # Decode uidb64 to get the user's ID
+        uid = force_str(urlsafe_base64_decode(uidb64))
+        print(f"UID =======>", uid )
+      
+        # Convert the decoded uid to an integer and fetch the user object
+        user = get_object_or_404(User, pk=int(uid))
+    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+        user = None
+
+    # Check if the token is valid for the user
+    if user is not None and default_token_generator.check_token(user, token):
+        # Render the password reset form if the token is valid
+        context = {'uidb64': uid, 'token': token}
+        return render(request, 'reset_password.html', context)
+    else:
+        # Handle invalid token or user case
+        return render(request, 'reset_password_invalid.html')
 
 class LogoutAndBlacklistRefreshTokenForUserView(APIView):
 

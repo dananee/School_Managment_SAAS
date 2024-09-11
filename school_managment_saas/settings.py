@@ -43,9 +43,22 @@ DEBUG = True
 
 ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS","").split()
 
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+    "http://edugenius",
+    "http://localhost"
+]
 
 
-CSRF_TRUSTED_ORIGINS = ["http://127.0.0.1:8000"]
+
+
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost',
+    'http://127.0.0.1',
+    'http://edugenius'  # Add your custom domain if needed
+]
+
 # EMAIL CONFIG
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = "smtp.gmail.com"
@@ -84,12 +97,15 @@ INSTALLED_APPS = [
     "school_managment",
     "channels",
     "djoser",
+     
+    "htmx",
     "corsheaders",
     "fcm_django",
     "drf_yasg",
 ]
 
 MIDDLEWARE = [
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -101,7 +117,6 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
 ]
 
-CORS_ALLOWED_ORIGINS = ["http://localhost:8000", "http://localhost:3000","http://0.0.0.0:8000"]
 CORS_ALLOW_METHODS = (
     "DELETE",
     "GET",
@@ -184,10 +199,15 @@ USE_TZ = True
 PHONENUMBER_DB_FORMAT = "NATIONAL"
 PHONENUMBER_DEFAULT_REGION = "MA"
 
-STATIC_URL = "static/"
+STATIC_ROOT = os.path.join(BASE_DIR, 'static_files')
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+ 
+
+STATIC_URL = "/static/"
 
 MEDIA_ROOT = os.path.join(os.path.dirname(BASE_DIR), "media")
 MEDIA_URL = "/media/"
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
@@ -251,7 +271,7 @@ SIMPLE_JWT = {
     "AUTH_HEADER_TYPES": ("JWT",),
     "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
 }
-DOMAIN = "localhost:3000"
+DOMAIN = "localhost:8000"
 DJOSER = {
     "USER_ID_FIELD": "email",
     "PASSWORD_RESET_CONFIRM_URL": "auth/reset-password/{uid}/{token}",

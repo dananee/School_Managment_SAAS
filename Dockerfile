@@ -16,13 +16,13 @@ ADD . /school_managment_saas/
 COPY requirements.txt .
 
 RUN pip install --upgrade pip
-RUN pip install -r requirements.txt --no-cache-dir
+RUN pip install --no-cache-dir -r requirements.txt
 
  
 
-EXPOSE 8000
+EXPOSE 8001
 
-CMD ["python","manage.py","runserver","0.0.0.0:8000"]
+CMD ["gunicorn", "--bind", "0.0.0.0:8001", "school_managment_saas.wsgi:application"]
 
 # Convert plain text files from Windows or Mac format to Unix
 # RUN apt-get install dos2unix

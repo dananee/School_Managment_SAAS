@@ -1,4 +1,16 @@
 services:
+  nginx:
+    build: ./nginx
+    image: nginx
+    container_name: "nginx_cont"
+    ports:
+      - 80:80 
+    depends_on:
+      - django_project
+    volumes:
+      - ./nginx:/etc/nginx/conf.d  # Mount nginx configuration
+      - ./static_files:/school_managment_saas/static_files  # Serve static files from the host to nginx container
+      - ./media:/media  
   db:
     container_name: school-db-container
     image: mysql:8
@@ -16,6 +28,7 @@ services:
       - MYSQL_DATABASE=${SQL_DATABASE}
     volumes:
       - /tmp/school_managment_saas/mysqld:/var/lib/mysqld/
+      - ./my.cnf:/etc/mysql/my.cnf
        
     
   django_project:
@@ -24,7 +37,8 @@ services:
       build: 
         context: .
         dockerfile: Dockerfile
-      command: bash -c "python manage.py makemigrations && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+      command: "gunicorn school_managment_saas.wsgi --workers 3 --bind 0.0.0.0:8001"
+
       env_file:
         - .env
       environment:
@@ -34,7 +48,8 @@ services:
       volumes:
         - .:/school_managment_saas
         - /tmp/school_managment_saas/mysqld:/var/lib/mysqld/
-        
+        - ./static_files:/school_managment_saas/static_files/
+        - ./media:/media 
       depends_on:
         - db
       links:
