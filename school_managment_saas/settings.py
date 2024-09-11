@@ -41,7 +41,7 @@ SECRET_KEY = os.environ.get("SECRET_KEY","qdqsffoizjhiouefnziufoehfouzbfi6541fze
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS","").split()
+ALLOWED_HOSTS = ["seashell-app-ew5be.ondigitalocean.app"]
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:8000",
@@ -49,7 +49,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://edugenius",
     "http://localhost",
     "http://localhost",
-    "https://seashell-app-ew5be.ondigitalocean.app/"
+    "https://seashell-app-ew5be.ondigitalocean.app"
 ]
 
 
