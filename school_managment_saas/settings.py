@@ -58,7 +58,8 @@ CORS_ALLOWED_ORIGINS = [
 CSRF_TRUSTED_ORIGINS = [
     'http://localhost',
     'http://127.0.0.1',
-    'http://edugenius'  # Add your custom domain if needed
+    'http://edugenius'   ,
+    "https://seashell-app-ew5be.ondigitalocean.app"
 ]
 
 # EMAIL CONFIG
