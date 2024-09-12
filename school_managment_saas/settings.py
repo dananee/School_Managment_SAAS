@@ -45,7 +45,7 @@ ALLOWED_HOSTS = ["*","84.46.240.230"]
 
 CORS_ALLOWED_ORIGINS = [
   
-    "*",
+    
     "84.46.240.230"
 ]
 
