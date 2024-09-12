@@ -41,7 +41,7 @@ SECRET_KEY = os.environ.get("SECRET_KEY","qdqsffoizjhiouefnziufoehfouzbfi6541fze
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ["seashell-app-ew5be.ondigitalocean.app"]
+ALLOWED_HOSTS = ["*","134.209.90.161"]
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:8000",
@@ -49,7 +49,8 @@ CORS_ALLOWED_ORIGINS = [
     "http://edugenius",
     "http://localhost",
     "http://localhost",
-    "https://seashell-app-ew5be.ondigitalocean.app"
+    "*",
+    "134.209.90.161"
 ]
 
 
@@ -158,7 +159,7 @@ DATABASES = {
     "default": {
         "ENGINE":os.environ.get("SQL_ENGINE",  "django.db.backends.mysql"),
         "NAME":  os.environ.get("SQL_DATABASE",'school_managment_db' ),
-        "HOST": os.environ.get("SQL_HOST",'db' ),
+        "HOST": os.environ.get("SQL_HOST",'localhost' ),
         "PORT": os.environ.get("SQL_PORT", "3306"),
         "USER": os.environ.get("SQL_USER",'root'),
         "PASSWORD": os.environ.get("SQL_PASSWORD",'mythologie'),
