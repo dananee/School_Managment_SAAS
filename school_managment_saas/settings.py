@@ -41,16 +41,12 @@ SECRET_KEY = os.environ.get("SECRET_KEY","qdqsffoizjhiouefnziufoehfouzbfi6541fze
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ["*","134.209.90.161"]
+ALLOWED_HOSTS = ["*","84.46.240.230"]
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:8000",
-    "http://127.0.0.1:8000",
-    "http://edugenius",
-    "http://localhost",
-    "http://localhost",
+  
     "*",
-    "134.209.90.161"
+    "84.46.240.230"
 ]
 
 
@@ -60,7 +56,7 @@ CSRF_TRUSTED_ORIGINS = [
     'http://localhost',
     'http://127.0.0.1',
     'http://edugenius'   ,
-    "https://seashell-app-ew5be.ondigitalocean.app"
+    "http://84.46.240.230/"
 ]
 
 # EMAIL CONFIG
