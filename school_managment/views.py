@@ -5,7 +5,6 @@ from rest_framework.generics import ListCreateAPIView
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
 from school_managment.permissions import IsStaffOrAdminUser, IsTeacherOrAdminUser
-from rest_framework.pagination import PageNumberPagination, LimitOffsetPagination
 
 from rest_framework.settings import api_settings
 
@@ -14,7 +13,7 @@ from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404, render
 # from school_managment.utils import  send_fcm_notification
 
-from school_managment.pagination import StandardResultsSetPagination, CustomPagination
+from school_managment.pagination import StandardResultsSetPagination
 
 from .serialization import (
     AttendanceChartSerializers,
@@ -139,7 +138,10 @@ class SchoolDataView(viewsets.ModelViewSet):
     }
     queryset = SchoolDataModel.objects.all()
     serializer_class = SchoolDataSerializer
+    pagination_class = StandardResultsSetPagination
 
+    class Meta:
+        ordering = ['id']
 
 class ClassViewSet(viewsets.ModelViewSet):
 
@@ -158,6 +160,9 @@ class ClassViewSet(viewsets.ModelViewSet):
     queryset = Classe.objects.all()
     serializer_class = ClassSerializer
 
+    class Meta:
+        ordering = ['id']
+
     def list(self, request):
         school_id = request.data.get("school_id")
         queryset = Classe.objects.filter(school=school_id)
@@ -167,7 +172,7 @@ class ClassViewSet(viewsets.ModelViewSet):
 
 
 class TeacherViewSet(viewsets.ModelViewSet):
-    queryset = Teacher.objects.all()
+    queryset = Teacher.objects.order_by('id')
     serializer_class = TeacherSerializer
     permission_classes_by_action = {
         "default": [IsAuthenticated],
@@ -180,12 +185,16 @@ class TeacherViewSet(viewsets.ModelViewSet):
             IsAdminUser,
         ],
     }
+    pagination_class = StandardResultsSetPagination
+
+    class Meta:
+        ordering = ['id']
 
     def list(self, request):
         school_id = request.query_params.get("school_id")
         queryset = Teacher.objects.filter(user__school=school_id)
 
-        paginator = CustomPagination()
+        paginator = StandardResultsSetPagination()
         paginated_queryset = paginator.paginate_queryset(queryset, request)
         serializer = TeacherSerializer(paginated_queryset, many=True)
         return paginator.get_paginated_response(serializer.data)
@@ -248,6 +257,9 @@ class StudentViewSet(viewsets.ModelViewSet):
     queryset = Student.objects.all()
     serializer_class = StudentSerializer
 
+    class Meta:
+        ordering = ['id']
+
     def get_permissions(self):
         try:
             # return permission_classes depending on `action`
@@ -271,8 +283,7 @@ class StudentViewSet(viewsets.ModelViewSet):
         queryset = self.get_queryset().filter(user__school=school_id)
         
         # Instantiate the paginator
-        paginator = PageNumberPagination()
-        paginator.page_size = 5  # Customize page size here or use a default setting
+        paginator = StandardResultsSetPagination()
 
         # Paginate the queryset
         paginated_queryset = paginator.paginate_queryset(queryset, request)
@@ -305,6 +316,9 @@ class ParentViewSet(viewsets.ModelViewSet):
     serializer_class = ParentSerializer
     permission_classes = [IsStaffOrAdminUser]
 
+    class Meta:
+        ordering = ['id']
+
     def list(self, request):
         school_id = request.query_params.get("school_id")
         queryset = Parent.objects.filter(user__school=school_id)
@@ -333,7 +347,11 @@ class ClassRoomViewSet(viewsets.ModelViewSet):
     # permission_classes = [IsStaffOrAdminUser]
     queryset = ClassRoom.objects.all()
     serializer_class = ClassRoomSerializer
-    pagination_class = CustomPagination
+    pagination_class = StandardResultsSetPagination
+
+
+    class Meta:
+        ordering = ['id']
 
     def list(self, request):
         print(api_settings.DEFAULT_PAGINATION_CLASS)
@@ -459,6 +477,10 @@ class SchoolMembersViewSet(viewsets.ModelViewSet):
             IsAdminUser,
         ],
     }
+
+
+    class Meta:
+        ordering = ['id']
 
     def get_permissions(self):
         try:
@@ -715,6 +737,11 @@ class StaffView(viewsets.ModelViewSet):
     queryset = Staff.objects.all()
     serializer_class = StaffSerialization
     permission_classes = [IsStaffOrAdminUser]
+    pagination_class = StandardResultsSetPagination
+
+
+    class Meta:
+        ordering = ['id']
 
     def list(self, request):
         school_id = request.query_params.get("school_id")

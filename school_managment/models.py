@@ -220,6 +220,7 @@ class Teacher(models.Model):
     )
 
     class Meta:
+        ordering = ['id']
         db_table = "Teacher"
         verbose_name = "Teacher"
         verbose_name_plural = "Teachers"

@@ -10,7 +10,10 @@ ADD . /school_managment_saas/
 
 # RUN apt-get update
 # RUN apt-get install gcc default-libmysqlclient-dev -y
-
+RUN apt-get update \
+    && apt-get install -y \
+    mariadb-client \
+    && rm -rf /var/lib/apt/lists/*
 # install dependencies
 # RUN pip install -U pip setuptools wheel
 COPY requirements.txt .

@@ -41,16 +41,11 @@ SECRET_KEY = os.environ.get("SECRET_KEY","qdqsffoizjhiouefnziufoehfouzbfi6541fze
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ["*","134.209.90.161"]
+ALLOWED_HOSTS = ["*"]
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:8000",
-    "http://127.0.0.1:8000",
-    "http://edugenius",
-    "http://localhost",
-    "http://localhost",
-    "*",
-    "134.209.90.161"
+    
 ]
 
 
@@ -60,7 +55,6 @@ CSRF_TRUSTED_ORIGINS = [
     'http://localhost',
     'http://127.0.0.1',
     'http://edugenius'   ,
-    "https://seashell-app-ew5be.ondigitalocean.app"
 ]
 
 # EMAIL CONFIG
@@ -260,7 +254,8 @@ REST_FRAMEWORK = {
         "%Y-%m-%d %H:%M",  # '2006-10-25 14:30'
         "%Y-%m-%d",
     ],
-    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "DEFAULT_PAGINATION_CLASS": "school_managment.pagination.StandardResultsSetPagination",
+
     "PAGE_SIZE": 2,
 }
 
@@ -275,7 +270,7 @@ SIMPLE_JWT = {
     "AUTH_HEADER_TYPES": ("JWT",),
     "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
 }
-DOMAIN = "localhost:8000"
+DOMAIN = "84.46.240.230"
 DJOSER = {
     "USER_ID_FIELD": "email",
     "PASSWORD_RESET_CONFIRM_URL": "auth/reset-password/{uid}/{token}",
