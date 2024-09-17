@@ -98,8 +98,8 @@ class HomePage(TemplateView):
     template_name = "site/index.html"
 
 
-class LoginPage(TemplateView):
-    template_name = "site/login.html"
+class MeetingPage(TemplateView):
+    template_name = "site/meeting.html"
 
 
 

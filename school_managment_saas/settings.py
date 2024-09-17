@@ -14,19 +14,28 @@ from django.core.management.utils import get_random_secret_key
 from datetime import timedelta
 from pathlib import Path
 import os
-from dotenv import load_dotenv
+from django.utils.translation import gettext_lazy as _
 
-load_dotenv()
+LANGUAGE_CODE = "en"
+ 
 
 import firebase_admin
 from firebase_admin import credentials
 
-
- 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 PROJECT_PATH = os.path.realpath(os.path.dirname(__file__))
- 
+
+LANGUAGES = [
+    ("en", _("English")),
+    ("ar", _("Arabic")),
+    ("es", _("Spanish")),
+    ("fr", _("French")),
+]
+
+LOCALE_PATHS = [os.path.join(BASE_DIR, "locale")]
+
+# Build paths inside the project like this: BASE_DIR / 'subdir'.
+
 
 SIGNING_KEY = os.environ.get("SIGNING_KEY")
 
@@ -35,26 +44,25 @@ SIGNING_KEY = os.environ.get("SIGNING_KEY")
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get("SECRET_KEY","qdqsffoizjhiouefnziufoehfouzbfi6541fzelkjnoi")
+SECRET_KEY = os.environ.get(
+    "SECRET_KEY", "qdqsffoizjhiouefnziufoehfouzbfi6541fzelkjnoi"
+)
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ["*"]
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:8000",
-    
 ]
 
 
-
-
 CSRF_TRUSTED_ORIGINS = [
-    'http://localhost',
-    'http://127.0.0.1',
-    'http://edugenius'   ,
+    "http://localhost",
+    "http://127.0.0.1",
+    "http://edugenius",
 ]
 
 # EMAIL CONFIG
@@ -66,7 +74,9 @@ EMAIL_HOST_PASSWORD = "iubd hmzq zjri fnbr "
 EMAIL_USE_TLS = True
 
 
-cred = credentials.Certificate("school_managment_saas/edugenius-5b7b0-firebase-adminsdk-9dlmq-444eb0a1f3.json")
+cred = credentials.Certificate(
+    "school_managment_saas/edugenius-5b7b0-firebase-adminsdk-9dlmq-444eb0a1f3.json"
+)
 firebase_admin.initialize_app(cred)
 
 FCM_DJANGO_SETTINGS = {
@@ -96,6 +106,8 @@ INSTALLED_APPS = [
     "channels",
     "djoser",
      
+
+    "compressor",
     "htmx",
     "corsheaders",
     "fcm_django",
@@ -104,6 +116,9 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "whitenoise.middleware.WhiteNoiseMiddleware",
+     "django_browser_reload.middleware.BrowserReloadMiddleware",
+
+    "django.middleware.locale.LocaleMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -113,6 +128,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
+ 
 ]
 
 CORS_ALLOW_METHODS = (
@@ -126,9 +142,14 @@ CORS_ALLOW_METHODS = (
 
 ROOT_URLCONF = "school_managment_saas.urls"
 
+
+ 
+
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [BASE_DIR / "templates"],
+
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -136,6 +157,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "django.template.context_processors.i18n",
             ],
         },
     },
@@ -151,12 +173,12 @@ CHANNEL_LAYERS = {"default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}
 
 DATABASES = {
     "default": {
-        "ENGINE":os.environ.get("SQL_ENGINE",  "django.db.backends.mysql"),
-        "NAME":  os.environ.get("SQL_DATABASE",'school_managment_db' ),
-        "HOST": os.environ.get("SQL_HOST",'localhost' ),
+        "ENGINE": os.environ.get("SQL_ENGINE", "django.db.backends.mysql"),
+        "NAME": os.environ.get("SQL_DATABASE", "school_managment_db"),
+        "HOST": os.environ.get("SQL_HOST", "localhost"),
         "PORT": os.environ.get("SQL_PORT", "3306"),
-        "USER": os.environ.get("SQL_USER",'root'),
-        "PASSWORD": os.environ.get("SQL_PASSWORD",'mythologie'),
+        "USER": os.environ.get("SQL_USER", "root"),
+        "PASSWORD": os.environ.get("SQL_PASSWORD", "mythologie"),
     }
 }
 
@@ -188,6 +210,7 @@ LANGUAGE_CODE = "en-us"
 TIME_ZONE = "UTC"
 
 USE_I18N = True
+USE_L10N = True
 
 USE_TZ = True
 
@@ -197,9 +220,18 @@ USE_TZ = True
 PHONENUMBER_DB_FORMAT = "NATIONAL"
 PHONENUMBER_DEFAULT_REGION = "MA"
 
-STATIC_ROOT = os.path.join(BASE_DIR, 'static_files')
+COMPRESS_ROOT = BASE_DIR / 'static'
+
+COMPRESS_ENABLED = True
+
+STATICFILES_FINDERS = ('compressor.finders.CompressorFinder',)
+
+if DEBUG:
+    STATICFILES_DIRS = [os.path.join(BASE_DIR, "static")]
+
+STATIC_ROOT = os.path.join(BASE_DIR, "static_files")
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
- 
+
 
 STATIC_URL = "/static/"
 
@@ -233,7 +265,6 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 REST_FRAMEWORK = {
-    
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ],
@@ -255,7 +286,6 @@ REST_FRAMEWORK = {
         "%Y-%m-%d",
     ],
     "DEFAULT_PAGINATION_CLASS": "school_managment.pagination.StandardResultsSetPagination",
-
     "PAGE_SIZE": 2,
 }
 

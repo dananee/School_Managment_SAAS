@@ -1,0 +1,312 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-09-16 00:44+0100\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#: school_managment/models.py:17
+msgid "MEN"
+msgstr ""
+
+#: school_managment/models.py:18
+msgid "FEMALE"
+msgstr ""
+
+#: school_managment/models.py:22
+msgid "WARNING"
+msgstr ""
+
+#: school_managment/models.py:23
+msgid "IMPORTANT"
+msgstr ""
+
+#: school_managment/models.py:24
+msgid "EVENT"
+msgstr ""
+
+#: school_managment/models.py:28
+msgid "ELMENTARY"
+msgstr ""
+
+#: school_managment/models.py:29
+msgid "PRIMARY"
+msgstr ""
+
+#: school_managment/models.py:30
+msgid "LYCEE"
+msgstr ""
+
+#: school_managment/models.py:31
+msgid "UNIVERSITY"
+msgstr ""
+
+#: school_managment/models.py:35
+msgid "OWNER"
+msgstr ""
+
+#: school_managment/models.py:36
+msgid "STAFF"
+msgstr ""
+
+#: school_managment/models.py:37
+msgid "TEACHER"
+msgstr ""
+
+#: school_managment/models.py:38
+msgid "STUDENT"
+msgstr ""
+
+#: school_managment/models.py:39
+msgid "PARENT"
+msgstr ""
+
+#: school_managment/templates/activation.html:4
+#, python-format
+msgid " Account activation on %(site_name)s"
+msgstr ""
+
+#: school_managment/templates/activation.html:8
+#: school_managment/templates/activation.html:18
+#, python-format
+msgid ""
+" You're receiving this email because you need to finish activation process "
+"on %(site_name)s."
+msgstr ""
+
+#: school_managment/templates/activation.html:10
+msgid "Please go to the following page to activate account:"
+msgstr ""
+
+#: school_managment/templates/activation.html:13
+#: school_managment/templates/activation.html:39
+msgid ""
+"If you face difficulties on account activation kindly contact us on: "
+"contact@geekyshows.com"
+msgstr ""
+
+#: school_managment/templates/confirmation.html:4
+#, python-format
+msgid ""
+"%(site_name)s - Your account has been successfully created and activated!"
+msgstr ""
+
+#: school_managment/templates/confirmation.html:8
+#: school_managment/templates/confirmation.html:13
+msgid "Your account has been created and is ready to use!"
+msgstr ""
+
+#: school_managment/templates/confirmation.html:39
+msgid ""
+"If you face difficulties in Login to your account kindly contact us on:\n"
+"  contact@geekyshows.com "
+msgstr ""
+
+#: school_managment/templates/password_changed_confirmation.html:4
+#, python-format
+msgid "%(site_name)s - Your password has been successfully changed!"
+msgstr ""
+
+#: school_managment/templates/password_changed_confirmation.html:8
+#: school_managment/templates/password_changed_confirmation.html:16
+msgid "Your password has been changed!"
+msgstr ""
+
+#: school_managment/templates/password_changed_confirmation.html:10
+msgid "Thanks for using our site!"
+msgstr ""
+
+#: school_managment/templates/password_changed_confirmation.html:12
+#, python-format
+msgid "The %(site_name)s team"
+msgstr ""
+
+#: school_managment/templates/password_changed_confirmation.html:42
+msgid ""
+"\n"
+"  If you face difficulties in Login to your account kindly contact us on: "
+"contact@geekyshows.com\n"
+"  "
+msgstr ""
+#: school_managment/templates/site/index.html:7
+msgid "EduGenius - School Management System"
+msgstr "EduGenius - Système de Gestion Scolaire"
+
+#: school_managment/templates/site/index.html:31
+msgid "EduGenius Logo"
+msgstr "Logo EduGenius"
+
+#: school_managment/templates/site/index.html:33
+msgid "EduGenius"
+msgstr "EduGenius"
+
+
+#: school_managment/templates/site/index.html:87
+msgid "select language"
+msgstr  "Sélectionner la langue"
+
+#: school_managment/templates/site/index.html:39
+#: school_managment/templates/site/index.html:97
+msgid "Services"
+msgstr "Services"
+
+#: school_managment/templates/site/index.html:42
+#: school_managment/templates/site/index.html:100
+msgid "Screenshots"
+msgstr "Captures d'écran"
+
+#: school_managment/templates/site/index.html:45
+#: school_managment/templates/site/index.html:103
+msgid "Pricing"
+msgstr "Tarifs"
+
+#: school_managment/templates/site/index.html:48
+#: school_managment/templates/site/index.html:106
+msgid "Contact"
+msgstr "Contact"
+
+#: school_managment/templates/site/index.html:57
+#: school_managment/templates/site/index.html:124
+msgid "Book a Free Meeting"
+msgstr "Réservez une Réunion Gratuite"
+
+#: school_managment/templates/site/index.html:63
+#: school_managment_saas/settings.py:30
+msgid "English"
+msgstr "English"
+
+#: school_managment/templates/site/index.html:64
+msgid "العربية"
+msgstr "العربية"
+
+#: school_managment/templates/site/index.html:65
+msgid "Español"
+msgstr "Español"
+
+#: school_managment/templates/site/index.html:66
+msgid "Français"
+msgstr "Français"
+
+#: school_managment/templates/site/index.html:115
+msgid "EduGenius Made Easy"
+msgstr "EduGenius Facile"
+
+#: school_managment/templates/site/index.html:118
+msgid "Make School Management Easier with Our Intuitive System"
+msgstr "Rendez la Gestion Scolaire Plus Facile avec Notre Système Intuitif"
+
+#: school_managment/templates/site/index.html:133
+msgid "Comprehensive School Management Solutions"
+msgstr "Solutions Complètes de Gestion Scolaire"
+
+#: school_managment/templates/site/index.html:147
+#: school_managment/templates/site/index.html:150
+msgid "Admin Dashboard"
+msgstr "Tableau de Bord Administratif"
+
+#: school_managment/templates/site/index.html:153
+msgid "admin desc"
+msgstr ""
+"Gérez tous les aspects de l'école dans un seul tableau unifié. De l'inscription des étudiants aux affectations du personnel, notre tableau de bord administratif rend la gestion scolaire plus efficace et basée sur les données."
+
+#: school_managment/templates/site/index.html:156
+msgid "- Track student progress and attendance"
+msgstr "- Suivi du progrès et de l'assiduité des étudiants"
+
+#: school_managment/templates/site/index.html:157
+msgid "- Handle payroll and staff management"
+msgstr "- Gérer la paie et la gestion du personnel"
+
+#: school_managment/templates/site/index.html:158
+msgid "- Manage school resources and schedules"
+msgstr "- Gérer les ressources et les horaires scolaires"
+
+#: school_managment/templates/site/index.html:159
+msgid "- Generate comprehensive reports"
+msgstr "- Générer des rapports complets"
+
+#: school_managment/templates/site/index.html:165
+#: school_managment/templates/site/index.html:195
+#: school_managment/templates/site/index.html:221
+msgid "Learn More"
+msgstr "En savoir plus"
+
+#: school_managment/templates/site/index.html:171
+#: school_managment/templates/site/index.html:174
+msgid "Teacher Portal"
+msgstr "Portail des Enseignants"
+
+#: school_managment/templates/site/index.html:177
+msgid "teacher desc"
+msgstr "Les enseignants peuvent facilement gérer leurs classes, planifier des leçons, suivre la performance des étudiants et communiquer avec les parents, tout en un seul endroit."
+
+#: school_managment/templates/site/index.html:182
+msgid "- Create and manage lesson plans"
+msgstr "- Créer et gérer des plans de cours"
+
+#: school_managment/templates/site/index.html:183
+msgid "- Assign and grade homework online"
+msgstr "- Attribuer et noter les devoirs en ligne"
+
+#: school_managment/templates/site/index.html:185
+msgid "- View detailed student profiles and progress"
+msgstr "- Voir les profils détaillés des étudiants et leur progression"
+
+#: school_managment/templates/site/index.html:188
+msgid "- Seamless communication with students and parents"
+msgstr "- Communication fluide avec les étudiants et les parents"
+
+#: school_managment/templates/site/index.html:201
+#: school_managment/templates/site/index.html:204
+msgid "Student Portal"
+msgstr "Portail des Étudiants"
+
+#: school_managment/templates/site/index.html:204
+msgid "student desc"
+msgstr "Un portail en libre-service permettant aux étudiants d'accéder à leurs emplois du temps, de soumettre des devoirs, de suivre leur progression et de communiquer avec les enseignants."
+
+#: school_managment/templates/site/index.html:212
+msgid "- View class schedules and grades"
+msgstr "- Voir les horaires de cours et les notes"
+
+#: school_managment/templates/site/index.html:213
+msgid "- Submit assignments online"
+msgstr "- Soumettre les devoirs en ligne"
+
+#: school_managment/templates/site/index.html:214
+msgid "- Track academic progress"
+msgstr "- Suivre le progrès académique"
+
+#: school_managment/templates/site/index.html:215
+msgid "- Communicate directly with teachers"
+msgstr "- Communiquer directement avec les enseignants"
+
+#: school_managment/templates/site/index.html:230
+msgid "All rights reserved."
+msgstr "Tous droits réservés."
+
+
+#: school_managment_saas/settings.py:31
+msgid "Arabic"
+msgstr ""
+
+#: school_managment_saas/settings.py:32
+msgid "Spanish"
+msgstr ""
+
+#: school_managment_saas/settings.py:33
+msgid "French"
+msgstr ""

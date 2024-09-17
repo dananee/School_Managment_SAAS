@@ -22,45 +22,35 @@ from django.conf.urls.static import static
 
 # DRF YASG
 from rest_framework import permissions
-from drf_yasg.views import get_schema_view
-from drf_yasg import openapi
+ 
 
 from school_managment.views import (
     CurrentUserView,
     HomePage,
-    LoginPage,
+  
+    MeetingPage,
     MyTokenObtainPairView,
     password_reset_confirm,
     activation_email_account,
     reset_password_page,
 )
 
-schema_view = get_schema_view(
-    openapi.Info(
-        title="Djoser API",
-        default_version="v1",
-        description="REST implementation of Django authentication system. djoser library provides a set of Django Rest Framework views to handle basic actions such as registration, login, logout, password reset and account activation. It works with custom user model.",
-        contact=openapi.Contact(email="contact@snippets.local"),
-        license=openapi.License(name="BSD License"),
-    ),
-    public=True,
-    permission_classes=(permissions.AllowAny,),
-)
+ 
 # from rest_framework import routers
 
 # router = routers.DefaultRouter()
 # router.register(r'reset-password', CustomPasswordResetConfirmView,basename="password_reset_confirm")
+from django.conf.urls.i18n import i18n_patterns
 
 
 urlpatterns = [
+    path("i18n/", include("django.conf.urls.i18n")),
     path("", HomePage.as_view()),
-    path("login/", LoginPage.as_view()),
+    path("meeting/", MeetingPage.as_view()),
     path("admin/", admin.site.urls),
-    re_path(
-        r"^api/v1/docs/$",
-        schema_view.with_ui("swagger", cache_timeout=0),
-        name="schema-swagger-ui",
-    ),
+      
+
+   
     path("api/", include("school_managment.urls")),
     path("auth/jwt/create/", MyTokenObtainPairView.as_view(), name="customtoken"),
     path("auth/users/me/", CurrentUserView.as_view(), name="current_user"),
@@ -79,6 +69,10 @@ urlpatterns = [
     ),
     # path('auth/blacklist/', LogoutAndBlacklistRefreshTokenForUserView.as_view(), name='blacklist')
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+urlpatterns += i18n_patterns(
+    path("", HomePage.as_view(), name="home_page"),
+)
 
 
 from school_managment.consumer import NotificationConsumer

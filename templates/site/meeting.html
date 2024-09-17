@@ -1,0 +1,162 @@
+{% load static %} {% load i18n %}
+
+<!DOCTYPE html>
+<html
+  lang="{{ LANGUAGE_CODE }}"
+  dir="{% if LANGUAGE_BIDI %}rtl{% else %}ltr{% endif %}"
+>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% trans "EduGenius - School Management System" %}</title>
+    <meta name="description" content="{% trans "EduGenius Book Meeting" %}">
+    <meta name="keywords" content="{% trans "school management, educational
+    software, student tracking, admin tools" %}">
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"
+    />
+
+    <link
+      rel="icon"
+      href="{% static 'images/favicon.ico' %}"
+      type="image/x-icon"
+    />
+
+    <link rel="alternate" hreflang="ar" href="example.com/ar" />
+    <link rel="alternate" hreflang="es" href="example.com/es" />
+    <link rel="alternate" hreflang="fr" href="example.com/fr" />
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <script src="https://unpkg.com/htmx.org@1.8.4"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&display=swap");
+
+      body {
+        font-family: "Nunito", sans-serif;
+      }
+
+      /* Additional Styles for Modal */
+      .hidden {
+        display: none;
+      }
+
+      .visible {
+        display: flex;
+      }
+    </style>
+  </head>
+
+  <body class="bg-[#111111] text-white">
+    <div class="flex justify-center items-center h-screen p-4">
+      <div
+        class="w-full h-full mx-auto flex flex-col md:flex-row bg-black rounded-lg shadow-lg"
+      >
+        <!-- Left Side with EduGenius Logo and Text -->
+        <div
+          class="md:w-1/2 h-1/4 md:h-full flex flex-row-reverse md:flex-col justify-center items-center p-10 bg-[#000000]"
+        >
+          <h1 class="md:text-8xl text-5xl px-4 font-bold text-white">
+            {% trans "EduGenius" %}
+          </h1>
+          <!-- Logo Image -->
+          <img src="{% static 'images/logo_edu_em.png' %}" alt="{% trans
+          "EduGenius Logo" %}" class="mt-4  w-30  h-30 " />
+        </div>
+
+        <!-- Right Side with Form -->
+        <div class="md:w-1/2 flex  flex-col justify-center p-10 bg-[#222222]">
+          <!-- Full Name Input -->
+
+          <h1 class="md:text-6xl text-5xl px-4 font-bold text-white pb-10">
+            {% trans "Welcome" %}
+          </h1>
+          <input
+            id="full-name"
+            type="text"
+            placeholder="Full Name"
+            class="w-full mb-4 p-3 bg-[#333333] text-white rounded-lg border border-gray-600 focus:outline-none focus:ring-2 focus:ring-[#00FF88]"
+          />
+
+          <!-- Phone Number Input (max 6 digits, formatted nicely) -->
+          <div class="relative mb-4">
+            <span
+              class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+              >+212</span
+            >
+            <input
+              id="phone-number"
+              type="tel"
+              maxlength="10"
+              placeholder="Phone Number"
+              class="w-full pl-16 p-3 bg-[#333333] text-white rounded-lg border border-gray-600 focus:outline-none focus:ring-2 focus:ring-[#00FF88]"
+              pattern="[0-9]{6}"
+              required
+            />
+          </div>
+
+          <!-- Date and Time Picker -->
+          <div class="flex-start flex-row mb-4">
+            <!-- Date Picker -->
+            <input
+              id="date-picker"
+              type="text"
+              placeholder="Select Date"
+              class="w-1/2 p-3 bg-[#333333] text-white rounded-lg border border-gray-600 focus:outline-none focus:ring-2 focus:ring-[#00FF88]"
+            />
+
+            <!-- Time Picker -->
+            <input
+              id="time-picker"
+              type="text"
+              placeholder="Select Time"
+              class="basis-1/4 p-3 bg-[#333333] text-white rounded-lg border border-gray-600 focus:outline-none focus:ring-2 focus:ring-[#00FF88]"
+            />
+          </div>
+
+          <!-- Confirm Button -->
+          <button
+            id="confirm-btn"
+            class="w-full p-3 bg-[#00FF88] text-black font-bold rounded-lg hover:bg-[#00FF66] transition"
+          >
+            Confirm
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Flatpickr for Date and Time Picker -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script>
+      // Date Picker Initialization
+      flatpickr("#date-picker", {
+        altInput: true,
+        altFormat: "F j, Y",
+        dateFormat: "Y-m-d",
+        defaultDate: "today",
+      });
+
+      // Time Picker Initialization
+      flatpickr("#time-picker", {
+        enableTime: true,
+        noCalendar: true,
+        dateFormat: "H:i",
+        time_24hr: true,
+      });
+
+      // Phone number validation for 6 digits with +212 prefix
+      document
+        .getElementById("confirm-btn")
+        .addEventListener("click", function () {
+          const phoneInput = document.getElementById("phone-number").value;
+          const phonePattern = /^[0-9]{6}$/;
+          if (!phonePattern.test(phoneInput)) {
+            alert("Please enter a valid 6-digit Moroccan phone number.");
+          } else {
+            alert("Meeting confirmed!"); // Placeholder for actual form submission
+          }
+        });
+    </script>
+  </body>
+</html>
