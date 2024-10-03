@@ -328,14 +328,14 @@ class ParentViewSet(viewsets.ModelViewSet):
 
 
 class SubjectViewSet(viewsets.ModelViewSet):
-    permission_classes = [IsStaffOrAdminUser]
+    # permission_classes = [IsStaffOrAdminUser]
     queryset = Subject.objects.all()
     serializer_class = SubjectSerializer
 
     def list(self, request):
-        query = request.query_params.get("school_id")
+        school_id = request.query_params.get("school_id")
         try:
-            queryset = Subject.objects.filter(school=query)
+            queryset = Subject.objects.filter(school=school_id)
 
             serializer = SubjectSerializer(queryset, many=True)
             return Response(serializer.data)

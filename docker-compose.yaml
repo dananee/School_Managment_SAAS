@@ -2,15 +2,21 @@ services:
   nginx:
     build: ./nginx
     image: nginx
+    restart: unless-stopped
     container_name: "nginx_cont"
+  
     ports:
       - 80:80
+      - 443:443
     depends_on:
-      - django_project
+      - backend
     volumes:
-      - ./nginx:/etc/nginx/conf.d  # Mount nginx configuration
-      - ./static_files:/school_managment_saas/static_files  # Serve static files from the host to nginx container
-      - ./media:/media
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./certbot/conf/dhparam.pem:/etc/ssl/certs/dhparam.pem 
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot  
+      - ./staticfiles:/var/www/edugenius.tech/staticfiles
+      - ./media:/media/
 
   db:
     container_name: school-db-container
@@ -28,32 +34,36 @@ services:
       - MYSQL_PASSWORD=${SQL_PASSWORD}
       - MYSQL_DATABASE=${SQL_DATABASE}
     volumes:
-      - /tmp/school_managment_saas/mysqld:/var/lib/mysqld/
+      - ./mysql_data:/var/lib/mysql/
 
-  django_project:
+  backend:
     image: school-image
+    container_name: backend
     build:
       context: .
       dockerfile: Dockerfile
-    command: "gunicorn --timeout 300 school_managment_saas.wsgi --workers 3 --bind 0.0.0.0:8001"
+    command: >
+      sh -c "gunicorn --timeout 500 school_managment_saas.wsgi --workers 3 --bind 0.0.0.0:8000"
     env_file:
       - .env
     environment:
-      - DATABASE_URL=mysql://${SQL_USER}:${SQL_PASSWORD}@db:3306/${SQL_DATABASE}  # No change, works for MariaDB
-    ports:
-      - "8000:8000"
+      - DATABASE_URL=mysql://${SQL_USER}:${SQL_PASSWORD}@db:3306/${SQL_DATABASE}
     volumes:
       - .:/school_managment_saas
-      - /tmp/school_managment_saas/mysqld:/var/lib/mysql/
-      - ./static_files:/school_managment_saas/static_files/
+      - ./mysql_data:/var/lib/mysql/
+      - ./staticfiles:/var/www/edugenius.tech/staticfiles
       - ./media:/media
+      - ./logs:/school_managment_saas/logs
+
     depends_on:
       - db
     links:
       - db
 
-
-volumes:
-    db:
-      name: school-docker-env
-      driver: local  
+  certbot:
+    image: certbot/certbot
+    container_name: certbot
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    command: certonly --webroot -w /var/www/certbot --force-renewal --email eedugenius@gmail.com -d edugenius.tech --agree-tos

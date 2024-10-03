@@ -212,6 +212,10 @@ msgstr "Rendez la Gestion Scolaire Plus Facile avec Notre Système Intuitif"
 msgid "Comprehensive School Management Solutions"
 msgstr "Solutions Complètes de Gestion Scolaire"
 
+#: school_managment/templates/site/index.html:141
+msgid "under desc"
+msgstr "EduGenius propose une large gamme de services qui simplifient la gestion des écoles pour toutes les parties prenantes. Découvrez les solutions sur mesure ci-dessous."
+
 #: school_managment/templates/site/index.html:147
 #: school_managment/templates/site/index.html:150
 msgid "Admin Dashboard"

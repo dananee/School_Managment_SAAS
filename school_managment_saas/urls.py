@@ -48,8 +48,6 @@ urlpatterns = [
     path("", HomePage.as_view()),
     path("meeting/", MeetingPage.as_view()),
     path("admin/", admin.site.urls),
-      
-
    
     path("api/", include("school_managment.urls")),
     path("auth/jwt/create/", MyTokenObtainPairView.as_view(), name="customtoken"),
@@ -67,8 +65,12 @@ urlpatterns = [
         activation_email_account,
         name="activation_email_account",
     ),
+
     # path('auth/blacklist/', LogoutAndBlacklistRefreshTokenForUserView.as_view(), name='blacklist')
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+
+urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 urlpatterns += i18n_patterns(
     path("", HomePage.as_view(), name="home_page"),

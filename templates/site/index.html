@@ -1,331 +1,252 @@
-{% load static %} {% load i18n %}
+{% load static %} {% load i18n %} {% load compress %}
 
 <!DOCTYPE html>
-<html
-  lang="{{ LANGUAGE_CODE }}"
-  dir="{% if LANGUAGE_BIDI %}rtl{% else %}ltr{% endif %}"
->
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{% trans "EduGenius - School Management System" %}</title>
-    <meta name="description" content="{% trans "EduGenius offers comprehensive
-    school management solutions for administrators, teachers, students, and
-    parents." %}"> <meta name="keywords" content="{% trans "school management,
-    educational software, student tracking, admin tools" %}">
+<html lang="{{ LANGUAGE_CODE }}" dir="{% if LANGUAGE_BIDI %}rtl{% else %}ltr{% endif %}">
 
-    <link
-      rel="icon"
-      href="{% static 'images/favicon.ico' %}"
-      type="image/x-icon"
-    />
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% trans "EduGenius - School Management System" %}</title>
+  <meta name="description" content="{% trans " EduGenius offers comprehensive school management solutions for
+    administrators, teachers, students, and parents." %}">
+  <meta name="keywords" content="{% trans " school management, educational software, student tracking, admin tools" %}">
 
-    <link rel="alternate" hreflang="ar" href="example.com/ar" />
-    <link rel="alternate" hreflang="es" href="example.com/es" />
-    <link rel="alternate" hreflang="fr" href="example.com/fr" />
+  <link rel="icon" href="{% static 'images/favicon.ico' %}">
 
-    <link rel="stylesheet" href="{% static 'src/styles.css' %}" />
 
-    <script src="https://unpkg.com/htmx.org@1.8.4"></script>
+  <link rel="alternate" hreflang="ar" href="edugenius.tech/ar" />
+  <link rel="alternate" hreflang="es" href="edugenius.tech/es" />
+  <link rel="alternate" hreflang="fr" href="edugenius.tech/fr" />
 
-    <style>
-      @import url("https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&display=swap");
 
-      body {
-        font-family: "Nunito", sans-serif;
-      }
+  {% compress css %}
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  {% endcompress %}
 
-      /* Additional Styles for Modal */
-      .hidden {
-        display: none;
-      }
 
-      .visible {
-        display: flex;
-      }
-    </style>
-  </head>
 
-  <body class="bg-[#111111] text-white text-left rtl:text-righ">
-    <!-- Header -->
-    <header class="bg-[#000000] py-6 shadow-lg">
-      <div class="container mx-auto flex justify-between items-center px-6">
-        <!-- Logo and Title -->
-        <div class="flex items-center space-x-4">
-          <img src="{% static 'images/logo_edu_b.png' %}" alt="{% trans
-          "EduGenius Logo" %}" class="h-10 w-10">
-          <h1 class="text-3xl px-4 font-bold text-white">
-            {% trans "EduGenius" %}
-          </h1>
-        </div>
+  <!-- <script src="https://cdn.tailwindcss.com"></script> -->
+  <script src="https://unpkg.com/htmx.org@1.8.4"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flowbite@2.5.2/dist/flowbite.min.js"></script>
 
-        <!-- Navigation -->
-        <nav class="md:flex space-x-8">
-          <a href="#services" class="text-lg hover:text-[#00FF88] transition"
-            >{% trans "Services" %}</a
-          >
-          <a href="#screenshots" class="text-lg hover:text-[#00FF88] transition"
-            >{% trans "Screenshots" %}</a
-          >
-          <a href="#pricing" class="text-lg hover:text-[#00FF88] transition"
-            >{% trans "Pricing" %}</a
-          >
-          <a href="#contact" class="text-lg hover:text-[#00FF88] transition"
-            >{% trans "Contact" %}</a
-          >
-        </nav>
-        <a
-          
-        href="/meeting"
-       
-        
-          class="bg-[#00FF88] text-black py-2 px-6 rounded-lg hover:bg-[#00FF66] transition"
-        >
-          {% trans "Book a Free Meeting" %}
+
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&display=swap");
+
+    body {
+      font-family: "Nunito", sans-serif;
+    }
+
+    /* Additional Styles for Modal */
+    .hidden {
+      display: none;
+    }
+
+    .visible {
+      display: flex;
+    }
+  </style>
+</head>
+
+<body class="bg-[#111111] text-white text-left rtl:text-righ">
+  <!-- Header -->
+  <header class="bg-[#000000] py-6 shadow-lg">
+    <div class="container mx-auto flex justify-between items-center px-6">
+      <!-- Logo and Title -->
+      <div class="flex items-center space-x-4">
+        <img src="{% static 'images/logo_edu_b.png' %}" alt="{% trans " EduGenius Logo" %}" class="h-10 w-10">
+        <h1 class="text-3xl px-4 font-bold text-white">{% trans "EduGenius" %}</h1>
+      </div>
+
+      <!-- Desktop Navigation -->
+      <nav class="hidden md:flex space-x-8">
+        <a href="#services" class="text-lg hover:text-[#00FF88] text-white transition">{% trans "Services" %}</a>
+        <a href="#screenshots" class="text-lg hover:text-[#00FF88] transition">{% trans "Screenshots" %}</a>
+        <a href="#pricing" class="text-lg hover:text-[#00FF88] transition">{% trans "Pricing" %}</a>
+        <a href="#contact" class="text-lg hover:text-[#00FF88] transition">{% trans "Contact" %}</a>
+      </nav>
+      <a href="/meeting"
+        class="hidden md:block bg-[#00FF88] text-black py-2 px-6 rounded-lg hover:bg-[#00FF66] transition">
+        {% trans "Book a Free Meeting" %}
       </a>
 
-        <button
-          id="dropdownButton"
-          class="text-white bg-[#111111] hover:bg-[#00FF66] hover:text-gray-700 focus:ring-4 focus:outline-none font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center"
-          type="button"
-        >
-          Language
-          <svg
-            class="w-2.5 h-2.5 ms-3"
-            aria-hidden="true"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 10 6"
-          >
-            <path
-              stroke="currentColor"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="m1 1 4 4 4-4"
-            />
+      <!-- Language Selector -->
+      <!-- Dropdown button and menu container -->
+      <div class="relative inline-block text-left">
+        <button id="dropdownButton"
+          class="text-white bg-[#111111] hover:bg-[#00FF66] hover:text-gray-700   font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center"
+          type="button">
+          <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
+            width="24" height="24" fill="none" viewBox="0 0 24 24">
+            <path stroke="currentColor" stroke-linecap="round" stroke-width="2"
+              d="M4.37 7.657c2.063.528 2.396 2.806 3.202 3.87 1.07 1.413 2.075 1.228 3.192 2.644 1.805 2.289 1.312 5.705 1.312 6.705M20 15h-1a4 4 0 0 0-4 4v1M8.587 3.992c0 .822.112 1.886 1.515 2.58 1.402.693 2.918.351 2.918 2.334 0 .276 0 2.008 1.972 2.008 2.026.031 2.026-1.678 2.026-2.008 0-.65.527-.9 1.177-.9H20M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
           </svg>
+
+
         </button>
 
-        <!-- Dropdown menu for language selection -->
-        <div
-          id="dropdownMenu"
-          class="hidden z-50 bg-white divide-y divide-gray-100 rounded-lg shadow w-44 dark:bg-gray-700"
-        >
+        <!-- Dropdown menu -->
+        <div id="dropdownMenu"
+          class="hidden absolute left-0 top-full mt-2 z-50 bg-white divide-y divide-gray-100 rounded-lg shadow w-44 dark:bg-gray-700">
           <ul class="py-2 text-sm text-gray-700 dark:text-gray-200">
             <li>
-              <a
-                href="/en"
-                data-lang="en"
-                class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
-                >English</a
-              >
+              <a href="/en"
+                class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">English</a>
             </li>
             <li>
-              <a
-                href="/fr"
-                data-lang="fr"
-                class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
-                >Français</a
-              >
+              <a href="/fr"
+                class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Français</a>
             </li>
             <li>
-              <a
-                href="/es"
-                data-lang="es"
-                class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
-                >Español</a
-              >
+              <a href="/es"
+                class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Español</a>
             </li>
             <li>
-              <a
-                href="/ar"
-                data-lang="ar"
-                class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
-                >العربية</a
-              >
+              <a href="/ar"
+                class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">العربية</a>
             </li>
           </ul>
         </div>
-
-        <!-- Mobile Menu Button -->
-        <div class="md:hidden">
-          <button id="mobileMenuButton" class="text-white focus:outline-none">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-6 w-6"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M4 6h16M4 12h16M4 18h16"
-              />
-            </svg>
-          </button>
-        </div>
       </div>
+      <!-- Mobile Menu Button -->
+      <button id="mobileMenuButton" class="md:hidden text-white focus:outline-none">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+        </svg>
+      </button>
+    </div>
 
-      <!-- Mobile Menu -->
-      <div
-        id="mobileMenu"
-        class="hidden bg-[#111111] text-center p-4 md:hidden"
-      >
-        <a href="#services" class="block text-lg py-2 hover:text-[#00FF88]"
-          >{% trans "Services" %}</a
-        >
-        <a href="#screenshots" class="block text-lg py-2 hover:text-[#00FF88]"
-          >{% trans "Screenshots" %}</a
-        >
-        <a href="#pricing" class="block text-lg py-2 hover:text-[#00FF88]"
-          >{% trans "Pricing" %}</a
-        >
-        <a href="#contact" class="block text-lg py-2 hover:text-[#00FF88]"
-          >{% trans "Contact" %}</a
-        >
-      </div>
-    </header>
-
-    <!-- Hero Section -->
-    <section class="bg-black py-20">
-      <div class="container mx-auto text-center px-6">
-        <h2 class="text-5xl font-bold text-[#00FF88]">
-          {% trans "EduGenius Made Easy" %}
-        </h2>
-        <p class="text-xl mt-4 text-gray-400">
-          {% trans "Make School Management Easier with Our Intuitive System" %}
-        </p>
-
-        <a
-           
-          href="/meeting"
-       
-          hx-trigger="click"
-          class="mt-8 inline-block bg-white text-black py-3 px-8 rounded-lg hover:bg-gray-300 transition"
-        >
-          {% trans "Book a Free Meeting" %}
+    <!-- Mobile Menu -->
+    <div id="mobileMenu" class="hidden z-50 bg-[#111111] text-center p-4 md:hidden">
+      <a href="#services" class="block text-lg py-2 hover:text-[#00FF88]">{% trans "Services" %}</a>
+      <a href="#screenshots" class="block text-lg py-2 hover:text-[#00FF88]">{% trans "Screenshots" %}</a>
+      <a href="#pricing" class="block text-lg py-2 hover:text-[#00FF88]">{% trans "Pricing" %}</a>
+      <a href="#contact" class="block text-lg py-2 hover:text-[#00FF88]">{% trans "Contact" %}</a>
+      <a href="/meeting" class="block bg-[#00FF88] text-black py-2 px-6 mt-4 rounded-lg hover:bg-[#00FF66] transition">
+        {% trans "Book a Free Meeting" %}
       </a>
-      </div>
-    </section>
+    </div>
+  </header>
 
-    
-    <!-- Services Section -->
-    <section id="services" class="py-16 bg-[#111111]">
-      <div class="container mx-auto text-center px-6">
-        <h3 class="text-3xl font-bold text-white">
-          {% trans "Comprehensive School Management Solutions" %}
-        </h3>
-        <p class="text-lg text-gray-400 mt-4">
-          {% trans "EduGenius offers a wide range of services that simplify
-          school management for all stakeholders. Explore the tailored solutions
-          below." %}
-        </p>
+  <!-- Hero Section -->
+  <section class="bg-black py-20">
+    <div class="container mx-auto text-center px-6">
+      <h2 class="text-5xl font-bold text-[#00FF88]">
+        {% trans "EduGenius Made Easy" %}
+      </h2>
+      <p class="text-xl mt-4 text-gray-400">
+        {% trans "Make School Management Easier with Our Intuitive System" %}
+      </p>
 
-        <!-- Services Grid -->
-        <div
-          class="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10"
-        >
-          <!-- Service 1: Admin Dashboard -->
-          <div class="bg-gray-800 p-8 rounded-lg">
-            <h4 class="text-xl font-bold text-white mt-6">
-              {% trans "Admin Dashboard" %}
-            </h4>
-            <p class="mt-4 text-gray-400">{% trans "admin desc" %}</p>
-            <ul class="text-left rtl:text-righ text-gray-400 mt-4 space-y-2">
-              <li>{% trans "- Track student progress and attendance" %}</li>
-              <li>{% trans "- Handle payroll and staff management" %}</li>
-              <li>{% trans "- Manage school resources and schedules" %}</li>
-              <li>{% trans "- Generate comprehensive reports" %}</li>
-            </ul>
-            <a
-              href="#book-meeting"
-              class="inline-block mt-6 bg-[#00FF88] text-black py-2 px-6 rounded-lg hover:bg-[#00FF66] transition"
-            >
-              {% trans "Learn More" %}
-            </a>
-          </div>
+      <a href="/meeting" hx-trigger="click"
+        class="mt-8 inline-block bg-white text-black py-3 px-8 rounded-lg hover:bg-gray-300 transition">
+        {% trans "Book a Free Meeting" %}
+      </a>
+    </div>
+  </section>
 
-          <!-- Service 2: Teacher Portal -->
-          <div class="bg-gray-800 p-8 rounded-lg">
-            <h4 class="text-xl font-bold text-white mt-6">
-              {% trans "Teacher Portal" %}
-            </h4>
-            <p class="mt-4 text-gray-400">{% trans "teacher desc" %}</p>
-            <ul class="text-left rtl:text-righ text-gray-400 mt-4 space-y-2">
-              <li>{% trans "- Access lesson plans and resources" %}</li>
-              <li>{% trans "- Grade student assignments with ease" %}</li>
-              <li>{% trans "- Communicate with students and parents" %}</li>
-              <li>{% trans "- Manage classroom activities efficiently" %}</li>
-            </ul>
-            <a
-              href="#book-meeting"
-              class="inline-block mt-6 bg-[#00FF88] text-black py-2 px-6 rounded-lg hover:bg-[#00FF66] transition"
-            >
-              {% trans "Learn More" %}
-            </a>
-          </div>
 
-          <!-- Service 3: Student Portal -->
-          <div class="bg-gray-800 p-8 rounded-lg">
-            <h4 class="text-xl font-bold text-white mt-6">
-              {% trans "Student Portal" %}
-            </h4>
-            <p class="mt-4 text-gray-400">{% trans "student desc" %}</p>
-            <ul class="text-left rtl:text-righ text-gray-400 mt-4 space-y-2">
-              <li>{% trans "- View class schedules and grades" %}</li>
-              <li>{% trans "- Submit assignments online" %}</li>
-              <li>{% trans "- Track academic progress" %}</li>
-              <li>{% trans "- Communicate directly with teachers" %}</li>
-            </ul>
-            <a
-              href="#book-meeting"
-              class="inline-block mt-6 bg-[#00FF88] text-black py-2 px-6 rounded-lg hover:bg-[#00FF66] transition"
-            >
-              {% trans "Learn More" %}
-            </a>
-          </div>
+  <!-- Services Section -->
+  <section id="services" class="py-16 bg-[#111111]">
+    <div class="container mx-auto text-center px-6">
+      <h3 class="text-3xl font-bold text-white">
+        {% trans "Comprehensive School Management Solutions" %}
+      </h3>
+      <p class="text-lg text-gray-400 mt-4">
+        {% trans "under desc" %}
+      </p>
+
+      <!-- Services Grid -->
+      <div class="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+        <!-- Service 1: Admin Dashboard -->
+        <div class="bg-gray-800 p-8 rounded-lg">
+          <h4 class="text-xl font-bold text-white mt-6">
+            {% trans "Admin Dashboard" %}
+          </h4>
+          <p class="mt-4 text-gray-400">{% trans "admin desc" %}</p>
+          <ul class="text-left rtl:text-righ text-gray-400 mt-4 space-y-2">
+            <li>{% trans "- Track student progress and attendance" %}</li>
+            <li>{% trans "- Handle payroll and staff management" %}</li>
+            <li>{% trans "- Manage school resources and schedules" %}</li>
+            <li>{% trans "- Generate comprehensive reports" %}</li>
+          </ul>
+          <a href="#book-meeting"
+            class="inline-block mt-6 bg-[#00FF88] text-black py-2 px-6 rounded-lg hover:bg-[#00FF66] transition">
+            {% trans "Learn More" %}
+          </a>
+        </div>
+
+        <!-- Service 2: Teacher Portal -->
+        <div class="bg-gray-800 p-8 rounded-lg">
+          <h4 class="text-xl font-bold text-white mt-6">
+            {% trans "Teacher Portal" %}
+          </h4>
+          <p class="mt-4 text-gray-400">{% trans "teacher desc" %}</p>
+          <ul class="text-left rtl:text-righ text-gray-400 mt-4 space-y-2">
+            <li>{% trans "- Access lesson plans and resources" %}</li>
+            <li>{% trans "- Grade student assignments with ease" %}</li>
+            <li>{% trans "- Communicate with students and parents" %}</li>
+            <li>{% trans "- Manage classroom activities efficiently" %}</li>
+          </ul>
+          <a href="#book-meeting"
+            class="inline-block mt-6 bg-[#00FF88] text-black py-2 px-6 rounded-lg hover:bg-[#00FF66] transition">
+            {% trans "Learn More" %}
+          </a>
+        </div>
+
+        <!-- Service 3: Student Portal -->
+        <div class="bg-gray-800 p-8 rounded-lg">
+          <h4 class="text-xl font-bold text-white mt-6">
+            {% trans "Student Portal" %}
+          </h4>
+          <p class="mt-4 text-gray-400">{% trans "student desc" %}</p>
+          <ul class="text-left rtl:text-righ text-gray-400 mt-4 space-y-2">
+            <li>{% trans "- View class schedules and grades" %}</li>
+            <li>{% trans "- Submit assignments online" %}</li>
+            <li>{% trans "- Track academic progress" %}</li>
+            <li>{% trans "- Communicate directly with teachers" %}</li>
+          </ul>
+          <a href="#book-meeting"
+            class="inline-block mt-6 bg-[#00FF88] text-black py-2 px-6 rounded-lg hover:bg-[#00FF66] transition">
+            {% trans "Learn More" %}
+          </a>
         </div>
       </div>
-    </section>
-    <!-- Footer -->
-    <footer class="bg-black py-6 text-center fixed inset-x-0 bottom-0">
-      <p class="text-gray-500">
-        &copy; 2024 EduGenius. {% trans "All rights reserved." %}
-      </p>
-    </footer>
+    </div>
+  </section>
+  <!-- Footer -->
+  <footer class="bg-black lg:py-6 py-4  text-center fixed inset-x-0 bottom-0">
+    <p class="text-gray-500">
+      &copy; 2024 EduGenius. {% trans "All rights reserved." %}
+    </p>
+  </footer>
 
-    <!-- Mobile Menu Script -->
-    <script>
-      const menuButton = document.getElementById("mobileMenuButton");
-      const mobileMenu = document.getElementById("mobileMenu");
+  <!-- Mobile Menu Script -->
+  <script>
+    const menuButton = document.getElementById("mobileMenuButton");
+    const mobileMenu = document.getElementById("mobileMenu");
 
-      menuButton.addEventListener("click", () => {
-        mobileMenu.classList.toggle("hidden");
-      });
+    menuButton.addEventListener("click", () => {
+      mobileMenu.classList.toggle("hidden");
+    });
 
-      
-
-      
-
+    document.addEventListener('DOMContentLoaded', (event) => {
       const dropdownButton = document.getElementById("dropdownButton");
       const dropdownMenu = document.getElementById("dropdownMenu");
-      if (dropdownButton && dropdownMenu) {
-        dropdownButton.addEventListener("click", function () {
-          dropdownMenu.classList.toggle("hidden");
-        });
 
-        document.addEventListener("click", function (event) {
-          if (
-            !dropdownButton.contains(event.target) &&
-            !dropdownMenu.contains(event.target)
-          ) {
-            dropdownMenu.classList.add("hidden");
-          }
-        });
-      }
-    </script>
-  </body>
+      dropdownButton.addEventListener("click", () => {
+        dropdownMenu.classList.toggle("hidden");
+      });
+
+      document.addEventListener("click", (e) => {
+        if (!dropdownButton.contains(e.target) && !dropdownMenu.contains(e.target)) {
+          dropdownMenu.classList.add("hidden");
+        }
+      });
+    });
+
+
+  </script>
+</body>
+
 </html>

@@ -213,6 +213,11 @@ msgstr "Make School Management Easier with Our Intuitive System"
 msgid "Comprehensive School Management Solutions"
 msgstr "Comprehensive School Management Solutions"
 
+
+#: school_managment/templates/site/index.html:141
+msgid "under desc"
+msgstr "EduGenius offers a wide range of services that simplify school management for all stakeholders. Explore the tailored solutions below."
+
 #: school_managment/templates/site/index.html:147
 #: school_managment/templates/site/index.html:150
 msgid "Admin Dashboard"

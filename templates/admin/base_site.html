@@ -1,0 +1,10 @@
+{% extends "admin/base.html" %}
+{% load static %} <!-- Load the static template tag -->
+
+{% block title %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
+
+{% block extrastyle %}
+<link rel="icon" href="{% static 'images/favicon.ico' %}">
+
+{{ block.super }}
+{% endblock %}

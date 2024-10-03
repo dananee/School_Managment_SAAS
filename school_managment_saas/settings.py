@@ -21,6 +21,10 @@ LANGUAGE_CODE = "en"
 
 import firebase_admin
 from firebase_admin import credentials
+import mimetypes
+
+mimetypes.add_type("text/css", ".css", True)
+
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 PROJECT_PATH = os.path.realpath(os.path.dirname(__file__))
@@ -36,6 +40,7 @@ LOCALE_PATHS = [os.path.join(BASE_DIR, "locale")]
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 
+ADMIN_MEDIA_PREFIX = BASE_DIR / "staticfiles/admin"
 
 SIGNING_KEY = os.environ.get("SIGNING_KEY")
 
@@ -49,20 +54,33 @@ SECRET_KEY = os.environ.get(
 )
 
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
 
-ALLOWED_HOSTS = ["*"]
+
+
+# SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = False
+
+ALLOWED_HOSTS = ['84.46.240.230', '*']
+
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:8000",
+    "http://84.46.240.230",
+    "https://edugenius.tech",
+    "http://172.18.0.4:8000",
+    "http://127.0.0.1:8000",
+    "http://0.0.0.0:8000",
+    
 ]
 
 
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost",
     "http://127.0.0.1",
-    "http://edugenius",
+    "https://edugenius.tech",
+    "http://84.46.240.230",
+    "http://172.18.0.4:8000",
+    "http://0.0.0.0:8000",
 ]
 
 # EMAIL CONFIG
@@ -72,6 +90,8 @@ EMAIL_PORT = "587"
 EMAIL_HOST_USER = "dananeabdjalil2@gmail.com"
 EMAIL_HOST_PASSWORD = "iubd hmzq zjri fnbr "
 EMAIL_USE_TLS = True
+
+ADMINS = [('Danane', 'eedugenius@gmail.com')]
 
 
 cred = credentials.Certificate(
@@ -91,7 +111,7 @@ FCM_DJANGO_SETTINGS = {
     "DELETE_INACTIVE_DEVICES": False,
 }
 INSTALLED_APPS = [
-    "unfold",
+    
     "daphne",
     "django.contrib.admin",
     "django.contrib.auth",
@@ -99,15 +119,14 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "school_managment",
     "rest_framework",
     "rest_framework_simplejwt",
     "phonenumber_field",
-    "school_managment",
     "channels",
     "djoser",
-     
+  'compressor',
 
-    "compressor",
     "htmx",
     "corsheaders",
     "fcm_django",
@@ -116,8 +135,8 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "whitenoise.middleware.WhiteNoiseMiddleware",
-     "django_browser_reload.middleware.BrowserReloadMiddleware",
-
+  
+    
     "django.middleware.locale.LocaleMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -130,6 +149,8 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
  
 ]
+
+ 
 
 CORS_ALLOW_METHODS = (
     "DELETE",
@@ -175,10 +196,10 @@ DATABASES = {
     "default": {
         "ENGINE": os.environ.get("SQL_ENGINE", "django.db.backends.mysql"),
         "NAME": os.environ.get("SQL_DATABASE", "school_managment_db"),
-        "HOST": os.environ.get("SQL_HOST", "localhost"),
+        "HOST": os.environ.get("SQL_HOST", "db"),
         "PORT": os.environ.get("SQL_PORT", "3306"),
-        "USER": os.environ.get("SQL_USER", "root"),
-        "PASSWORD": os.environ.get("SQL_PASSWORD", "mythologie"),
+        "USER": os.environ.get("SQL_USER", "myuser"),
+        "PASSWORD": os.environ.get("SQL_PASSWORD", "mythologie007"),
     }
 }
 
@@ -220,20 +241,33 @@ USE_TZ = True
 PHONENUMBER_DB_FORMAT = "NATIONAL"
 PHONENUMBER_DEFAULT_REGION = "MA"
 
-COMPRESS_ROOT = BASE_DIR / 'static'
+STATIC_URL = "/static/"
+
+# The directory where static files will be collected
+STATIC_ROOT =  BASE_DIR / "staticfiles"
+
+STATICFILES_DIRS = [
+    BASE_DIR / "static",  # Adjust this if your files are elsewhere
+]
+
+ 
+COMPRESS_ROOT =  BASE_DIR / "staticfiles"
 
 COMPRESS_ENABLED = True
 
-STATICFILES_FINDERS = ('compressor.finders.CompressorFinder',)
-
-if DEBUG:
-    STATICFILES_DIRS = [os.path.join(BASE_DIR, "static")]
-
-STATIC_ROOT = os.path.join(BASE_DIR, "static_files")
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+ 
+ 
+# Configuration for Whitenoise to compress static files
+STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.ManifestStaticFilesStorage'
 
 
-STATIC_URL = "/static/"
+
+# Specify the finders that will look for static files
+STATICFILES_FINDERS = (
+    'django.contrib.staticfiles.finders.FileSystemFinder',  # Default finder
+    'django.contrib.staticfiles.finders.AppDirectoriesFinder',  # Default finder
+    'compressor.finders.CompressorFinder'
+)
 
 MEDIA_ROOT = os.path.join(os.path.dirname(BASE_DIR), "media")
 MEDIA_URL = "/media/"
@@ -300,7 +334,7 @@ SIMPLE_JWT = {
     "AUTH_HEADER_TYPES": ("JWT",),
     "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
 }
-DOMAIN = "84.46.240.230"
+ 
 DJOSER = {
     "USER_ID_FIELD": "email",
     "PASSWORD_RESET_CONFIRM_URL": "auth/reset-password/{uid}/{token}",
@@ -319,3 +353,6 @@ DJOSER = {
         "token_create": "school_managment.serialization.CustomTokenObtainPairSerializer",
     },
 }
+
+ 
+
