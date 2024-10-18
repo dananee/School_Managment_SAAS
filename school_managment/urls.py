@@ -23,7 +23,10 @@ from .views import (
  
     StudentViewSet,
     SubjectViewSet,
+    TeacherScheduleViewSet,
     TeacherViewSet,
+    StudentAttendance,
+    HomeworkViewSet
     # send_notification,
     
 )
@@ -34,8 +37,11 @@ from rest_framework import routers
 router = routers.DefaultRouter()
 router.register(r"school_data", SchoolDataView)
 
+router.register(r'teschedule', TeacherScheduleViewSet, basename='teacher-schedule')
 
 router.register(r"classes", ClassViewSet)
+router.register(r"student_attend", StudentAttendance,basename='attendance-student')
+router.register(r"homework", HomeworkViewSet,basename='homework')
 router.register(r"events", EventsView)
 router.register(r"teachers", TeacherViewSet)
 router.register(r"student", StudentViewSet)

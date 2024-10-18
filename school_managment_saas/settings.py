@@ -58,10 +58,13 @@ SECRET_KEY = os.environ.get(
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
-
+DEBUG = True
+BACKEND_API_URL = "https://edugenius.tech"
 ALLOWED_HOSTS = ['84.46.240.230', '*']
 
+CSRF_COOKIE_SECURE = True
+CSRF_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SECURE = True
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:8000",
@@ -136,7 +139,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "whitenoise.middleware.WhiteNoiseMiddleware",
   
-    
+    'django.middleware.csrf.CsrfViewMiddleware',
     "django.middleware.locale.LocaleMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -349,8 +352,7 @@ DJOSER = {
         "user_create": "school_managment.serialization.PersonSerializer",
         "user": "school_managment.serialization.PersonSerializer",
         "current_user": "school_managment.serialization.PersonSerializer",
-        "password_reset_confirm": "school_managment.serialization.CustomPasswordResetConfirmSerializer",
-        "token_create": "school_managment.serialization.CustomTokenObtainPairSerializer",
+         "token_create": "school_managment.serialization.CustomTokenObtainPairSerializer",
     },
 }
 

@@ -1,10 +1,12 @@
 from base64 import urlsafe_b64decode
-from django.http import Http404, HttpResponseBadRequest
+from django.http import Http404, HttpResponseBadRequest, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from rest_framework.generics import ListCreateAPIView
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
 from school_managment.permissions import IsStaffOrAdminUser, IsTeacherOrAdminUser
+import requests
+ 
 
 from rest_framework.settings import api_settings
 
@@ -16,9 +18,10 @@ from django.shortcuts import get_object_or_404, render
 from school_managment.pagination import StandardResultsSetPagination
 
 from .serialization import (
-    AttendanceChartSerializers,
+   
     AttendanceSerializer,
     AttendancesSerializer,
+    ClassScheduleSerializer,
     CustomPasswordResetConfirmSerializer,
     CustomTokenObtainPairSerializer,
     EventsSerializer,
@@ -38,6 +41,7 @@ from .serialization import (
     TeacherSerializer,
     SubjectSerializer,
     ClassRoomSerializer,
+    HomeworkSerializer
 )
 
 
@@ -59,6 +63,7 @@ from .models import (
     Teacher,
     Subject,
     ClassRoom,
+    Homework
 )
 from rest_framework import viewsets
 from rest_framework import status
@@ -102,7 +107,30 @@ class MeetingPage(TemplateView):
     template_name = "site/meeting.html"
 
 
+def calculateAttendSt(schoolId):
+        try:
+            student = Student.objects.get(user=schoolId)
+        except Student.DoesNotExist:
+            return {"error": "Student not found"}
 
+        # Get total number of class sessions (or based on a specific schedule, term, etc.)
+        total_classes = Attendance.objects.filter(student=student).count()
+
+        # If there's a separate way to calculate total available classes (e.g., from ClassSchedule)
+        total_class_sessions = Attendance.objects.filter(schedule__isnull=False).count()
+
+        # Calculate the attendance percentage
+        attendance_percentage = (total_classes / total_class_sessions) * 100 if total_class_sessions > 0 else 0
+
+        # Get the actual attendance details (dates, etc.)
+        attended_classes = Attendance.objects.filter(student=student).values('date', 'id','teacher')
+
+        # Return the data in a dictionary
+        return {
+            "student_id": schoolId,
+            "attendance_percentage": attendance_percentage,
+            "attended_classes": list(attended_classes)  # List of classes attended by the student
+        }
 
 
 def send_notification_by_role(role, message, data):
@@ -245,7 +273,7 @@ class StudentViewSet(viewsets.ModelViewSet):
 
     permission_classes_by_action = {
         "default": [IsStaffOrAdminUser],
-        "retrieve": [IsTeacherOrAdminUser],
+        "retrieve": [],
         "list": [IsTeacherOrAdminUser],
         "create": [IsStaffOrAdminUser],
         "update": [],
@@ -276,30 +304,27 @@ class StudentViewSet(viewsets.ModelViewSet):
             ]
 
     def list(self, request):
+
         school_id = request.query_params.get("school_id")
-
-        
-         # Get the queryset
         queryset = self.get_queryset().filter(user__school=school_id)
-        
-        # Instantiate the paginator
         paginator = StandardResultsSetPagination()
-
-        # Paginate the queryset
         paginated_queryset = paginator.paginate_queryset(queryset, request)
-
-        # Serialize the paginated data
         serializer = self.get_serializer(paginated_queryset, many=True)
-        
-        # Return paginated response
         return paginator.get_paginated_response(serializer.data)
 
     def retrieve(self, request, pk=None):
+        class_id = request.query_params.get("class_id")
+        try:
+            if(pk != "classid"):
+                queryset = Student.objects.get(user=pk)
+                serializer = StudentSerializer(queryset)
+            else:
+                queryset = Student.objects.filter(classe=class_id)
+                serializer = StudentSerializer(queryset,many=True)
 
-        queryset = Student.objects.filter(classe=pk)
-
-        serializer = StudentSerializer(queryset, many=True)
-        return Response(serializer.data)
+            return Response(serializer.data)
+        except Student.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
 
     def create(self, request):
         serializer = StudentSerializer(data=request.data)
@@ -323,8 +348,20 @@ class ParentViewSet(viewsets.ModelViewSet):
         school_id = request.query_params.get("school_id")
         queryset = Parent.objects.filter(user__school=school_id)
 
-        serializer = ParentSerializer(queryset, many=True)
-        return Response(serializer.data)
+        paginator = StandardResultsSetPagination()
+        paginated_queryset = paginator.paginate_queryset(queryset, request)
+        serializer = self.get_serializer(paginated_queryset, many=True)
+        return paginator.get_paginated_response(serializer.data)
+    
+    def retrieve(self, request,pk=None):
+         
+        try:
+            queryset = Parent.objects.filter(student=pk)
+
+            serializer = ParentSerializer(queryset, many=True)
+            return Response(serializer.data)
+        except Parent.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
 
 
 class SubjectViewSet(viewsets.ModelViewSet):
@@ -342,6 +379,31 @@ class SubjectViewSet(viewsets.ModelViewSet):
         except Subject.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
+
+class HomeworkViewSet(viewsets.ModelViewSet):
+    queryset = Homework.objects.all()
+    serializer_class = HomeworkSerializer
+
+    def list(self, request):
+        school_id = request.query_params.get("school_id")
+        try:
+            queryset = Homework.objects.filter(school=school_id)
+
+            serializer = HomeworkSerializer(queryset, many=True)
+            return Response(serializer.data)
+        except Homework.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+
+    def retrieve(self, request,pk=None):
+        school_id = request.query_params.get("school_id")
+        try:
+            queryset = Homework.objects.filter(school=school_id,assigned_class=pk)
+
+            serializer = HomeworkSerializer(queryset, many=True)
+            return Response(serializer.data)
+        except Homework.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
 
 class ClassRoomViewSet(viewsets.ModelViewSet):
     # permission_classes = [IsStaffOrAdminUser]
@@ -534,6 +596,44 @@ class ScheduleClassesViewSet(viewsets.ModelViewSet):
         serializer = self.serializer_class(queryset, many=True)
         return Response(serializer.data)
 
+    def retrieve(self, request, pk=None):
+        try:
+            # Get the ClassRooms where 'classes_taught' matches the given pk
+            classrooms = ClassRoom.objects.filter(classes_taught__pk=pk)
+            
+            # Get schedules for the filtered classrooms
+            queryset = ClassSchedule.objects.filter(class_room__in=classrooms)
+
+            if not queryset.exists():
+                return Response(status=status.HTTP_404_NOT_FOUND)
+
+            serializer = ScheduleClassSerializer(queryset, many=True)
+            return Response(serializer.data)
+        except ClassSchedule.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+class TeacherScheduleViewSet(viewsets.ViewSet):
+    """
+    A viewset to return all schedules for the classes a teacher is assigned to.
+    """
+
+    @action(detail=True, methods=['get'])
+    def schedule(self, request, pk=None):
+        # Get the teacher by primary key (pk)
+        try:
+            teacher = Teacher.objects.get(pk=pk)
+        except Teacher.DoesNotExist:
+            return Response({"error": "Teacher not found."}, status=404)
+
+        # Get the classes taught by the teacher
+        classes = teacher.teaching_classes.all()
+
+        # Get the schedules for the classes taught by the teacher
+        schedules = ClassSchedule.objects.filter(class_room__classes_taught__in=classes)
+
+        # Serialize the data
+        serializer = ClassScheduleSerializer(schedules, many=True)
+        return Response(serializer.data)
 
 class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
@@ -553,43 +653,58 @@ class CustomPasswordResetConfirmView(viewsets.ViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-def password_reset_confirm(request, uidb64, token):
-    try:
-        uid = force_str(urlsafe_base64_decode(uidb64))
-        print(f"UID =======>", uid )
-        user = get_object_or_404(Person, pk=uid)
-    except (ValueError, Http404):
-        raise Http404("Invalid user ID")
+from django.shortcuts import render, redirect
+from django.middleware.csrf import get_token
+from django.http import JsonResponse
+from django.conf import settings
 
-    if default_token_generator.check_token(user, token):
-        if request.method == "POST":
-            new_password = request.POST.get("new_password")
-            re_new_password = request.POST.get("re_new_password")
-            if new_password != "":
-                # Update the user's password
-                user.set_password(new_password)
 
-                user.save()
-                # Redirect to a success page or display a success message
-                return render(request, "password_reset_success.html")
-            else:
+def password_reset_confirm(request, uid, token):
+    if request.method == 'POST':
+        new_password = request.POST.get('new_password')
+        re_new_password = request.POST.get('re_new_password')
 
-                # Passwords do not match, render the password reset form with an error
-                return render(
-                    request,
-                    "reset_password.html",
-                    {
-                        "uidb64": uidb64,
-                        "token": token,
-                        "error_message": "Passwords do not match",
-                    },
-                )
+        # Validate passwords (check if they match)
+        if new_password != re_new_password:
+            return JsonResponse({'error': 'Passwords do not match'}, status=400)
+
+        # Prepare payload for Djoser's password reset confirm API
+        payload = {
+            'uid': uid,
+            'token': token,
+            'new_password': new_password,
+            're_new_password': re_new_password
+        }
+
+        # Include CSRF token for security
+        headers = {
+            'X-CSRFToken': request.COOKIES.get('csrftoken'),
+            'Content-Type': 'application/json'
+        }
+
+        # Make the request to Djoser's password reset confirm endpoint
+        response = requests.post(f'{settings.BACKEND_API_URL}/auth/users/reset_password_confirm/', json=payload, headers=headers)
+
+        if response.status_code == 204:  # Djoser returns 204 No Content on success
+            # Return the success message to be swapped by HTMX
+            return  redirect("password_reset_confirmation")
         else:
-            return render(
-                request, "reset_password.html", {"uidb64": uidb64, "token": token}
-            )
-    else:
-        raise Http404("Invalid password reset link.")
+            # Handle errors from the response
+            error_data = response.json().get('error', 'An unexpected error occurred')
+            return JsonResponse({'error': error_data}, status=response.status_code)
+
+    # If GET request, render the password reset form
+    context = {
+        'uid': uid,
+        'token': token,
+        'csrf_token': get_token(request),
+    }
+    return render(request, 'auth/reset_password_confirm.html', context)
+
+def password_reset_confirmation(request):
+    return render(request, 'auth/confirmation.html')
+
+
 
 
 def activation_email_account(request, uidb64, token):
@@ -610,26 +725,7 @@ def activation_email_account(request, uidb64, token):
         raise Http404("Invalid password reset link.")
 
 
-def reset_password_page(request, uidb64, token):
-    User = get_user_model()
-    try:
-        # Decode uidb64 to get the user's ID
-        uid = force_str(urlsafe_base64_decode(uidb64))
-        print(f"UID =======>", uid )
-      
-        # Convert the decoded uid to an integer and fetch the user object
-        user = get_object_or_404(User, pk=int(uid))
-    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
-        user = None
-
-    # Check if the token is valid for the user
-    if user is not None and default_token_generator.check_token(user, token):
-        # Render the password reset form if the token is valid
-        context = {'uidb64': uid, 'token': token}
-        return render(request, 'reset_password.html', context)
-    else:
-        # Handle invalid token or user case
-        return render(request, 'reset_password_invalid.html')
+ 
 
 class LogoutAndBlacklistRefreshTokenForUserView(APIView):
 
@@ -684,7 +780,10 @@ class AttendanceView(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     def retrieve(self, request, pk=None):
-        queryset = self.queryset.model.objects.filter()
+        queryset = self.queryset.model.objects.filter(student__classe=pk)
+
+        serializer = self.serializer_class(queryset, many=True)
+        return Response(serializer.data)
 
 
 class NotificationView(viewsets.ModelViewSet):
@@ -714,12 +813,22 @@ class ResultView(viewsets.ModelViewSet):
 
     queryset = Result.objects.all()
     serializer_class = ResultSerializers
-    permission_classes = [IsStaffOrAdminUser]
+    permission_classes_by_action = {
+        "default": [IsStaffOrAdminUser],
+        "retrieve": [IsAuthenticated, ],
+        "list": [IsAuthenticated],
+        "create": [IsStaffOrAdminUser],
+        "update": [IsStaffOrAdminUser],
+        "partial_update": [IsStaffOrAdminUser],
+        "destroy": [
+            IsStaffOrAdminUser,
+        ],
+    }
 
     def list(self, request):
         school_id = request.query_params.get("school_id")
-        teacher_id = request.query_params.get("teacher_id")
-        queryset = self.queryset.model.objects.filter(student__user__school=school_id)
+        student_id = request.query_params.get("student_id")
+        queryset = self.queryset.model.objects.filter(student=student_id)
 
         serializer = self.serializer_class(queryset, many=True)
         return Response(serializer.data)
@@ -763,27 +872,27 @@ class StaffView(viewsets.ModelViewSet):
 class ExamViewSet(viewsets.ModelViewSet):
     queryset = Exam.objects.all()
     serializer_class = ExamSerializers
-    permission_classes = [IsStaffOrAdminUser]
+    
 
     def list(self, request):
-        school_id = request.query_params.get("school_id")
-        queryset = Exam.objects.filter(school=school_id)
+        class_id = request.query_params.get("class_id")
+        teacher_id = request.query_params.get("teacher_id")
+        queryset = Exam.objects.filter(class_association=class_id,teacher=teacher_id)
         serializer = ExamSerializers(queryset, many=True)
         return Response(serializer.data)
 
     def retrieve(self, request, pk=None):
-        classe_id = request.query_params.get("classe_id")
-        teacher_id = request.query_params.get(
-            "teacher_id",
-        )
+         
+        teacher_id = request.query_params.get("teacher_id")
+
         queryset = Exam.objects.filter(
-            class_association=classe_id, teacher__user__id=teacher_id
+            class_association=pk 
         )
         serializer = ExamSerializers(queryset, many=True)
         return Response(serializer.data)
 
 
-from django.http import JsonResponse
+ 
 
 from datetime import datetime
 
@@ -850,6 +959,16 @@ class AttendanceChartView(viewsets.ModelViewSet):
 
         return JsonResponse(chart_data_list, safe=False)
 
+
+class StudentAttendance(viewsets.ModelViewSet):
+     
+    def list(self,request):
+        student_id = request.query_params.get("student_id")
+
+        response_data = calculateAttendSt(schoolId=student_id)
+        
+        return JsonResponse(response_data, safe=False)
+        
 
 class PerformanceView(viewsets.ModelViewSet):
     permission_classes = [IsStaffOrAdminUser]

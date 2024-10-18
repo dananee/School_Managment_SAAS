@@ -27,12 +27,12 @@ from rest_framework import permissions
 from school_managment.views import (
     CurrentUserView,
     HomePage,
-  
+    password_reset_confirmation,
     MeetingPage,
     MyTokenObtainPairView,
-    password_reset_confirm,
+   
     activation_email_account,
-    reset_password_page,
+    password_reset_confirm
 )
 
  
@@ -55,11 +55,11 @@ urlpatterns = [
     path("auth/", include("djoser.urls")),
     path("auth/", include("djoser.urls.jwt")),
     # path("auth/", include(router.urls)),
-    path(
-        "auth/reset-password/<uidb64>/<token>",
-        reset_password_page,
-        name="password_reset_confirm",
-    ),
+    path('auth/reset-password/<uid>/<token>/',  password_reset_confirm, name='password_reset_confirm'),
+
+    path('auth/reset-password/confirmation/',  password_reset_confirmation, name='password_reset_confirmation'),
+
+
     path(
         "auth/activate/<uidb64>/<token>",
         activation_email_account,

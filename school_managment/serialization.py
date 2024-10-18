@@ -19,6 +19,7 @@ from .models import (
     Subject,
     ClassRoom,
     Person,
+    Homework
 )
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from djoser.serializers import (
@@ -26,6 +27,10 @@ from djoser.serializers import (
 )
 
 from phonenumber_field.serializerfields import PhoneNumberField
+from django.utils.http import urlsafe_base64_decode
+from django.contrib.auth.tokens import default_token_generator
+
+
 
 
 
@@ -80,39 +85,58 @@ class Base64ImageField(serializers.ImageField):
         return extension
 
 
+from django.contrib.auth.tokens import default_token_generator
+from django.utils.http import urlsafe_base64_decode
+from rest_framework import serializers
+from school_managment.models import Person  # Adjust this import to your actual User model
+
 class CustomPasswordResetConfirmSerializer(serializers.Serializer):
-    email = serializers.EmailField()
+    uid = serializers.CharField()
     token = serializers.CharField()
-    new_password = serializers.CharField()
-    re_new_password = serializers.CharField()
+    new_password = serializers.CharField(write_only=True)
+    re_new_password = serializers.CharField(write_only=True)
 
     def validate(self, data):
-        email = data.get('email')
+        uid = data.get('uid')
         token = data.get('token')
         new_password = data.get('new_password')
         re_new_password = data.get('re_new_password')
 
-        # Validate that the passwords match
+        # Ensure passwords are present
+        if not new_password or not re_new_password:
+            raise serializers.ValidationError("Both new password and confirm password are required.")
+
+        # Validate if passwords match
         if new_password != re_new_password:
             raise serializers.ValidationError("Passwords do not match.")
 
-        # Validate the token and user
+        # Decode the UID to get the user
         try:
-            user = Person.objects.get(email=email)
-        except Person.DoesNotExist:
-            raise serializers.ValidationError("Person with this email does not exist.")
+            uid = urlsafe_base64_decode(uid).decode()
+            user = Person.objects.get(pk=uid)  # Adjust to your User model
+            print(f"Decoded UID: {uid}, User: {user}")
+        except (Person.DoesNotExist, ValueError, TypeError):
+            raise serializers.ValidationError("Invalid user ID.")
 
+        # Validate the token
         if not default_token_generator.check_token(user, token):
+            print(f"Invalid token: {token}")
             raise serializers.ValidationError("Invalid or expired token.")
 
+        # Save the user to be used in the save method
+        self.user = user
         return data
 
     def save(self, **kwargs):
-        email = self.validated_data['email']
-        new_password = self.validated_data['new_password']
-        user = Person.objects.get(email=email)
-        user.set_password(new_password)
-        user.save()
+        # Now access the new_password from validated_data
+        new_password = self.validated_data["new_password"]
+        
+        # Set the new password for the user
+        self.user.set_password(new_password)
+        self.user.save()
+        return self.user
+         
+
 
 
 class SchoolDataSerializer(serializers.ModelSerializer):
@@ -434,7 +458,15 @@ class ScheduleClassSerializer(serializers.ModelSerializer):
     class Meta:
         model = ClassSchedule
         fields = "__all__"
+        
+class ClassScheduleSerializer(serializers.ModelSerializer):
+    class_room = ClassRoomSerializer()
+    start_time = serializers.DateTimeField(format="%H:%M")
+    end_time = serializers.DateTimeField(format="%H:%M")
 
+    class Meta:
+        model = ClassSchedule
+        fields = ['day', 'start_time', 'end_time', 'class_room', 'school']
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
@@ -551,11 +583,7 @@ class StaffSerialization(serializers.ModelSerializer):
             )
 
 
-class AttendanceChartSerializers(serializers.ModelSerializer):
-
-    class Meta:
-        model = Attendance
-        fields = "__all__"
+ 
 
 
 class ResultSerializers(serializers.ModelSerializer):
@@ -605,6 +633,57 @@ class ExamSerializers(serializers.ModelSerializer):
         representation["teacher"] = TeacherSerializer(instance.teacher).data
         return representation
 
+
+class HomeworkSerializer(serializers.ModelSerializer):
+    teacher_id = serializers.PrimaryKeyRelatedField(
+        queryset=Teacher.objects.all(), source="assigned_by", write_only=True, required=False
+    )
+    
+    subject_id = serializers.PrimaryKeyRelatedField(
+        queryset=Subject.objects.all(), source="subject", write_only=True, required=False
+    )
+
+    class Meta:
+        model = Homework
+        fields = '__all__'
+
+    def validate(self, data):
+        # Make sure either teacher_id or assigned_by is set
+        if not data.get('assigned_by') and not data.get('teacher_id'):
+            raise serializers.ValidationError({"assigned_by": "This field is required."})
+        
+        # Make sure either subject_id or subject is set
+        if not data.get('subject') and not data.get('subject_id'):
+            raise serializers.ValidationError({"subject": "This field is required."})
+        
+        return data
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        
+        # Check if the assigned_by (teacher) exists before serializing
+        representation["assigned_by"] = TeacherSerializer(instance.assigned_by).data
+        representation["subject"] = SubjectSerializer(instance.subject).data
+       
+        return representation
+
+         
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        
+        # Check if the assigned_by (teacher) exists before serializing
+        representation["assigned_by"] = TeacherSerializer(
+                instance.assigned_by
+        ).data
+        
+        representation["subject"] = SubjectSerializer(
+                instance.subject
+        ).data
+       
+        return representation
+
+    
 
 class PerformanceSerializer(serializers.ModelSerializer):
     performance = serializers.SerializerMethodField()

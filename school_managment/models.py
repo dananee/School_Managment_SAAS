@@ -244,6 +244,21 @@ class Subject(models.Model):
     def __str__(self) -> str:
         return f"{self.id} - {self.subject_name}"
 
+class Homework(models.Model):
+    title = models.CharField(max_length=255)
+    description = models.TextField()
+    due_date = models.DateField()
+    assigned_by = models.ForeignKey(Teacher, on_delete=models.CASCADE,null=True, blank=True)  # Assuming teacher is a user
+    assigned_class = models.ForeignKey(Classe, on_delete=models.CASCADE)
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE,null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    school=school = models.ForeignKey(
+        SchoolDataModel, on_delete=models.CASCADE, null=False, blank=False
+    )
+
+    def __str__(self) -> str:
+        return f"{self.id} - {self.title} -> {self.assigned_class}"
 
 class Attendance(models.Model):
 
