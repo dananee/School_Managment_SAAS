@@ -58,7 +58,7 @@ SECRET_KEY = os.environ.get(
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 BACKEND_API_URL = "https://edugenius.tech"
 ALLOWED_HOSTS = ['84.46.240.230', '*']
 
@@ -73,6 +73,9 @@ CORS_ALLOWED_ORIGINS = [
     "http://172.18.0.4:8000",
     "http://127.0.0.1:8000",
     "http://0.0.0.0:8000",
+    "http://tauri.localhost",
+    "http://localhost:5050",  # The local server URL where Tauri runs
+    "http://127.0.0.1:5050",
     
 ]
 
@@ -84,6 +87,9 @@ CSRF_TRUSTED_ORIGINS = [
     "http://84.46.240.230",
     "http://172.18.0.4:8000",
     "http://0.0.0.0:8000",
+    "http://tauri.localhost",
+     "http://localhost:5050",  # The local server URL where Tauri runs
+    "http://127.0.0.1:5050",
 ]
 
 # EMAIL CONFIG
@@ -115,12 +121,14 @@ FCM_DJANGO_SETTINGS = {
 }
 INSTALLED_APPS = [
     
-    "daphne",
+    "admin_interface",
+    "colorfield",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
+    "daphne",
     "django.contrib.staticfiles",
     "school_managment",
     "rest_framework",
@@ -128,13 +136,14 @@ INSTALLED_APPS = [
     "phonenumber_field",
     "channels",
     "djoser",
-  'compressor',
-
+    'compressor',
     "htmx",
     "corsheaders",
     "fcm_django",
     "drf_yasg",
 ]
+
+ 
 
 MIDDLEWARE = [
     "whitenoise.middleware.WhiteNoiseMiddleware",
@@ -182,6 +191,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "django.template.context_processors.i18n",
+               
             ],
         },
     },
@@ -309,7 +319,7 @@ REST_FRAMEWORK = {
         "rest_framework.throttling.AnonRateThrottle",
         "rest_framework.throttling.UserRateThrottle",
     ],
-    "DEFAULT_THROTTLE_RATES": {"anon": "30/min", "user": "60/min"},
+    "DEFAULT_THROTTLE_RATES": {"anon": "30/min", "user": "160/min"},
     "DATE_INPUT_FORMATS": [
         # '2006-10-25'
         "%m/%d/%Y %H:%M:%S",  # '10/25/2006 14:30:59'

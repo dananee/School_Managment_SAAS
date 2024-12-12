@@ -41,7 +41,9 @@ from .serialization import (
     TeacherSerializer,
     SubjectSerializer,
     ClassRoomSerializer,
-    HomeworkSerializer
+    HomeworkSerializer,
+    ProfileParentSerializer,
+    calculate_monthly_performance
 )
 
 
@@ -192,7 +194,7 @@ class ClassViewSet(viewsets.ModelViewSet):
         ordering = ['id']
 
     def list(self, request):
-        school_id = request.data.get("school_id")
+        school_id = request.query_params.get("school_id")
         queryset = Classe.objects.filter(school=school_id)
 
         serializer = ClassSerializer(queryset, many=True)
@@ -339,7 +341,8 @@ class StudentViewSet(viewsets.ModelViewSet):
 class ParentViewSet(viewsets.ModelViewSet):
     queryset = Parent.objects.all()
     serializer_class = ParentSerializer
-    permission_classes = [IsStaffOrAdminUser]
+    
+    pagination_class = StandardResultsSetPagination
 
     class Meta:
         ordering = ['id']
@@ -363,6 +366,19 @@ class ParentViewSet(viewsets.ModelViewSet):
         except Parent.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
+
+class ParentProfile(viewsets.ModelViewSet):
+    queryset = Parent.objects.all()
+    serializer_class = ProfileParentSerializer
+    
+    def list(self, request):
+        try:
+            parent_id = request.query_params.get("parent_id")
+            queryset = Parent.objects.get(user=parent_id)
+            serializer = ProfileParentSerializer(queryset)
+            return Response(serializer.data)
+        except Parent.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
 
 class SubjectViewSet(viewsets.ModelViewSet):
     # permission_classes = [IsStaffOrAdminUser]
@@ -396,9 +412,9 @@ class HomeworkViewSet(viewsets.ModelViewSet):
 
 
     def retrieve(self, request,pk=None):
-        school_id = request.query_params.get("school_id")
+        
         try:
-            queryset = Homework.objects.filter(school=school_id,assigned_class=pk)
+            queryset = Homework.objects.filter(assigned_class=pk)
 
             serializer = HomeworkSerializer(queryset, many=True)
             return Response(serializer.data)
@@ -588,7 +604,7 @@ class ScheduleClassesViewSet(viewsets.ModelViewSet):
     serializer_class = ScheduleClassSerializer
 
     def list(self, request):
-        school_id = request.data.get("school_id")
+        school_id = request.query_params.get("school_id")
         queryset = self.queryset.model.objects.filter(
             class_room__assigned_teacher__user__school=school_id
         )
@@ -599,10 +615,10 @@ class ScheduleClassesViewSet(viewsets.ModelViewSet):
     def retrieve(self, request, pk=None):
         try:
             # Get the ClassRooms where 'classes_taught' matches the given pk
-            classrooms = ClassRoom.objects.filter(classes_taught__pk=pk)
+            # classrooms = ClassRoom.objects.filter(id=pk)
             
             # Get schedules for the filtered classrooms
-            queryset = ClassSchedule.objects.filter(class_room__in=classrooms)
+            queryset = ClassSchedule.objects.filter(class_room__classes_taught=pk)
 
             if not queryset.exists():
                 return Response(status=status.HTTP_404_NOT_FOUND)
@@ -626,10 +642,10 @@ class TeacherScheduleViewSet(viewsets.ViewSet):
             return Response({"error": "Teacher not found."}, status=404)
 
         # Get the classes taught by the teacher
-        classes = teacher.teaching_classes.all()
+         
 
         # Get the schedules for the classes taught by the teacher
-        schedules = ClassSchedule.objects.filter(class_room__classes_taught__in=classes)
+        schedules = ClassSchedule.objects.filter(class_room__assigned_teacher=teacher)
 
         # Serialize the data
         serializer = ClassScheduleSerializer(schedules, many=True)
@@ -657,8 +673,9 @@ from django.shortcuts import render, redirect
 from django.middleware.csrf import get_token
 from django.http import JsonResponse
 from django.conf import settings
+from django.views.decorators.csrf import csrf_exempt
 
-
+@csrf_exempt
 def password_reset_confirm(request, uid, token):
     if request.method == 'POST':
         new_password = request.POST.get('new_password')
@@ -690,6 +707,8 @@ def password_reset_confirm(request, uid, token):
             return  redirect("password_reset_confirmation")
         else:
             # Handle errors from the response
+            print("Response status:", response.status_code)
+            print("Response body:", response.json())
             error_data = response.json().get('error', 'An unexpected error occurred')
             return JsonResponse({'error': error_data}, status=response.status_code)
 
@@ -760,7 +779,7 @@ class EventsView(viewsets.ModelViewSet):
     serializer_class = EventsSerializer
 
     def list(self, request):
-        school_id = request.data.get("school_id")
+        school_id = request.query_params.get("school_id")
         queryset = self.queryset.model.objects.filter(school=school_id)
 
         serializer = self.serializer_class(queryset, many=True)
@@ -788,11 +807,11 @@ class AttendanceView(viewsets.ModelViewSet):
 
 class NotificationView(viewsets.ModelViewSet):
 
-    queryset = Notification.objects.order_by("-timestamp")
+    queryset = Notification.objects.order_by("-timestamp")  
     serializer_class = NotificationSerializer
 
     def list(self, request):
-        school_id = request.data.get("school_id")
+        school_id = request.query_params.get("school_id")
         queryset = self.queryset.model.objects.filter(sender__school=school_id)
 
         serializer = self.serializer_class(queryset, many=True)
@@ -826,7 +845,7 @@ class ResultView(viewsets.ModelViewSet):
     }
 
     def list(self, request):
-        school_id = request.query_params.get("school_id")
+         
         student_id = request.query_params.get("student_id")
         queryset = self.queryset.model.objects.filter(student=student_id)
 
@@ -834,9 +853,17 @@ class ResultView(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     def retrieve(self, request, pk=None):
-
-        queryset = self.queryset.model.objects.filter(teacher=pk)
-
+        student_id = request.query_params.get("student_id")
+        class_id = request.query_params.get("class_id")
+        print(student_id,class_id,pk)
+        if(student_id != None):
+            queryset = self.queryset.model.objects.filter(teacher=pk,student=student_id)
+        elif(class_id != None):
+            queryset = self.queryset.model.objects.filter(exam__class_association=class_id,teacher=pk)
+            
+        else:
+            queryset = self.queryset.model.objects.filter(teacher=pk)
+        
         serializer = self.serializer_class(queryset, many=True)
         return Response(serializer.data)
 
@@ -877,12 +904,11 @@ class ExamViewSet(viewsets.ModelViewSet):
     def list(self, request):
         class_id = request.query_params.get("class_id")
         teacher_id = request.query_params.get("teacher_id")
-        queryset = Exam.objects.filter(class_association=class_id,teacher=teacher_id)
+        queryset = Exam.objects.filter(class_association=class_id, teacher=teacher_id)
         serializer = ExamSerializers(queryset, many=True)
         return Response(serializer.data)
 
     def retrieve(self, request, pk=None):
-         
         teacher_id = request.query_params.get("teacher_id")
 
         queryset = Exam.objects.filter(
@@ -898,7 +924,7 @@ from datetime import datetime
 
 
 class AttendanceChartView(viewsets.ModelViewSet):
-    permission_classes = [IsStaffOrAdminUser]
+    
 
     def list(self, request, *args, **kwargs):
         school_id = request.query_params.get("school_id")
@@ -968,7 +994,44 @@ class StudentAttendance(viewsets.ModelViewSet):
         response_data = calculateAttendSt(schoolId=student_id)
         
         return JsonResponse(response_data, safe=False)
+    
+class AllStudentsMonthlyPerformanceChartView(APIView):
+    def get(self, request, school_id):
+        try:
+            # Filter students by the provided school
+            students = Student.objects.filter(user__school=school_id)
+            
+            if not students.exists():
+                return Response({"error": "No students found for this school"}, status=status.HTTP_404_NOT_FOUND)
+            
+            # Calculate monthly performance for students in this school
+            performance_data = calculate_monthly_performance(students)
+            
+            return Response( performance_data, status=status.HTTP_200_OK)
         
+        except SchoolDataModel.DoesNotExist:
+            return Response({"error": "School not found"}, status=status.HTTP_404_NOT_FOUND)   
+
+class ClassMonthlyPerformanceChartView(APIView):
+    def get(self, request, class_id):
+        try:
+            # Get students in the specified class
+            students = Student.objects.filter(classe=class_id)
+             
+            
+            if not students.exists():
+                return Response({"error": "No students found for this class"}, status=status.HTTP_404_NOT_FOUND)
+            
+            # Calculate monthly performance for students in this class
+            performance_data = calculate_monthly_performance(students)
+            
+            return Response({
+                "class_id": class_id,
+                "monthly_performance": performance_data
+            }, status=status.HTTP_200_OK)
+        
+        except Classe.DoesNotExist:
+            return Response({"error": "Class not found"}, status=status.HTTP_404_NOT_FOUND)
 
 class PerformanceView(viewsets.ModelViewSet):
     permission_classes = [IsStaffOrAdminUser]

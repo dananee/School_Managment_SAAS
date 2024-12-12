@@ -132,7 +132,7 @@ class SchoolMembers(models.Model):
         verbose_name_plural = "SchoolMembers"
 
     def __str__(self) -> str:
-        return f"{self.person.first_name} {self.person.last_name}  - {self.role} - {self.school}"
+        return f"ID: {self.id}  Full Name:   {self.person.first_name} {self.person.last_name}  - ROLE:    {self.role} -  School:  {self.school}"
 
 
 class Admin(models.Model):
@@ -213,20 +213,18 @@ class Teacher(models.Model):
     qualification = models.CharField(max_length=255, null=False, blank=False)
     experience = models.IntegerField(null=False, blank=False)
     specialization = models.CharField(max_length=255, null=False, blank=False)
-    address = models.TextField(null=False, blank=False)
+    address = models.CharField(max_length=255,null=False, blank=False)
     joining_date = models.DateField(auto_now_add=True)
-    teaching_classes = models.ManyToManyField(
-        Classe, related_name="teachers", blank=False
-    )
+    
 
     class Meta:
-        ordering = ['id']
+        ordering = ['joining_date']
         db_table = "Teacher"
         verbose_name = "Teacher"
         verbose_name_plural = "Teachers"
 
     def __str__(self):
-        return f"{self.id} -> {self.user.person.email}'s Profile"
+        return f"{self.id} -> {self.user.person.email} - {self.user.person.last_name}"
 
 
 class Subject(models.Model):
@@ -347,8 +345,8 @@ class ClassRoom(models.Model):
     capacity = models.IntegerField()
     building = models.CharField(max_length=255, null=True, blank=True)
     is_virtual = models.BooleanField(default=False)
-    classes_taught = models.ManyToManyField(
-        Classe, related_name="classrooms_taught", blank=True
+    classes_taught = models.ForeignKey(
+        Classe, related_name="classrooms_taught", on_delete=models.CASCADE, null=True, blank=True
     )
     assigned_teacher = models.ForeignKey(
         Teacher, on_delete=models.CASCADE, null=True, blank=True
@@ -388,8 +386,8 @@ class ClassSchedule(models.Model):
             ("Sunday", "Sunday"),
         ],
     )
-    start_time = models.TimeField()
-    end_time = models.TimeField()
+    start_time =  models.TimeField(help_text="Enter time in HH:mm format")
+    end_time = models.TimeField(help_text="Enter time in HH:mm format")
     class_room = models.ForeignKey(ClassRoom, on_delete=models.CASCADE)
     school = models.ForeignKey(
         SchoolDataModel, on_delete=models.CASCADE, null=True, blank=True

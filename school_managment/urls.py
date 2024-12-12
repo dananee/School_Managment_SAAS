@@ -2,8 +2,10 @@ from django.urls import path, include
 
 
 from .views import (
+    AllStudentsMonthlyPerformanceChartView,
     AttendanceChartView,
     AttendanceView,
+    ClassMonthlyPerformanceChartView,
     ClassRoomViewSet,
     ClassViewSet,
     EventsView,
@@ -20,14 +22,15 @@ from .views import (
     SchoolMembersViewSet,
     StaffView,
     StudentByTeacherViewSet,
- 
+ ParentProfile,
     StudentViewSet,
     SubjectViewSet,
     TeacherScheduleViewSet,
     TeacherViewSet,
     StudentAttendance,
-    HomeworkViewSet
-    # send_notification,
+    HomeworkViewSet,
+   
+   
     
 )
 
@@ -45,6 +48,7 @@ router.register(r"homework", HomeworkViewSet,basename='homework')
 router.register(r"events", EventsView)
 router.register(r"teachers", TeacherViewSet)
 router.register(r"student", StudentViewSet)
+router.register(r"parentp", ParentProfile)
 router.register(r"parent", ParentViewSet)
 router.register(r"subjects", SubjectViewSet)
 router.register(r"classrooms", ClassRoomViewSet)
@@ -64,7 +68,9 @@ router.register(r'fcm-devices', FCMDeviceViewSet, basename='fcmdevice')
 
 urlpatterns = [
         # path('send-notification/', send_notification, name='send-notification'),
-     
+ path('students/<int:school_id>/monthly-performance-chart/', AllStudentsMonthlyPerformanceChartView.as_view(), name='all-students-monthly-performance-chart'),
+    path('classes/<int:class_id>/monthly-performance-chart/', ClassMonthlyPerformanceChartView.as_view(), name='class-monthly-performance-chart'),
+   
     path("login/", MyTokenObtainPairView.as_view(), name="token_obtain_pair"),
  
  

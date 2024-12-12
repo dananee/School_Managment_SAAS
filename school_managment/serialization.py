@@ -29,16 +29,33 @@ from djoser.serializers import (
 from phonenumber_field.serializerfields import PhoneNumberField
 from django.utils.http import urlsafe_base64_decode
 from django.contrib.auth.tokens import default_token_generator
+from django.db.models import Avg
+from django.db.models.functions import TruncMonth
 
 
 
 
+def calculate_monthly_performance(student):
+    # Filter results by student and group by month
+    
+    if not student.exists():
+        return []
+    
+    monthly_performance = (
+        Result.objects.filter(student__in=student)
+        .annotate(month=TruncMonth('date'))
+        .values('month')
+        .annotate(average_score=Avg('score'))
+        .order_by('month')
+    )
 
-def calculate_performance(student):
-    results = Result.objects.filter(student=student)
-    total_score = sum(result.score for result in results)
-    average_score = total_score / len(results) if len(results) > 0 else 0
-    return average_score
+    # Convert to a dictionary format or list of tuples for further use
+    performance_data = [
+        {"date": entry['month'], "average_score": entry['average_score']}
+        for entry in monthly_performance
+    ]
+    
+    return performance_data
 
 
 class Base64ImageField(serializers.ImageField):
@@ -266,9 +283,6 @@ class SchoolMembersSerializer(serializers.ModelSerializer):
 
 class ParentSerializer(serializers.ModelSerializer):
     user = SchoolMembersSerializer()
-
- 
-    
     class Meta:
         model = Parent
         fields = "__all__"
@@ -311,19 +325,11 @@ class ParentSerializer(serializers.ModelSerializer):
 
 class TeacherSerializer(serializers.ModelSerializer):
     user = SchoolMembersSerializer()
-    teaching_classes_id =  serializers.PrimaryKeyRelatedField(queryset=Classe.objects.all(), source="teaching_classes",many=True,write_only=True)
-
+ 
     class Meta:
         model = Teacher
-        fields = ("id","user","qualification","teaching_classes_id","experience","specialization","address","joining_date")  # Add other fields as needed
+        fields = ("id","user","qualification" ,"experience","specialization","address","joining_date")  # Add other fields as needed
        
-       
-    def to_representation(self, instance):
-        representation = super().to_representation(instance)
-        representation["teaching_classes"] = ClassSerializer(instance.teaching_classes,many=True).data
-        return representation
-    
-
     def update(self, instance, validated_data):
         user_data = validated_data.pop("user")
         user_data["school"] = user_data["school"].id
@@ -341,8 +347,6 @@ class TeacherSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         person_data = validated_data.pop("user")
         person_data["school"] = person_data["school"].id
-        teaching_classes = validated_data.pop("teaching_classes")
-
  
         member_serializer = SchoolMembersSerializer(
             data=person_data, context=self.context
@@ -350,8 +354,6 @@ class TeacherSerializer(serializers.ModelSerializer):
         if member_serializer.is_valid():
             person = member_serializer.save()  # Use save() to create the person object
             teacher = Teacher.objects.create(user=person, **validated_data)
-            teacher.teaching_classes.add(*teaching_classes)
-
             return teacher
         else:
             # Handle serializer errors if needed
@@ -408,9 +410,16 @@ class StudentSerializer(serializers.ModelSerializer):
 class SubjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = Subject
-        fields = ["id", "subject_name"]
+        fields = ["id", "subject_name","school"]
 
-
+class ProfileParentSerializer(serializers.ModelSerializer):
+    user = SchoolMembersSerializer(read_only=True)
+    student = StudentSerializer(read_only=True,many=True)
+    
+    class Meta:
+        model = Parent
+        fields = "__all__"
+        extra_kwargs = {'student': {'required': False}, }
 # Add other fields as needed
 
 
@@ -418,13 +427,13 @@ class ClassRoomSerializer(serializers.ModelSerializer):
  
     subjects_taught_id = serializers.PrimaryKeyRelatedField(queryset=Subject.objects.all(), source="subjects_taught",write_only=True)
     assigned_teacher_id = serializers.PrimaryKeyRelatedField(queryset=Teacher.objects.all(), source="assigned_teacher",write_only=True)
-    classes_taught_id =  serializers.PrimaryKeyRelatedField(queryset=Classe.objects.all(), source="classes_taught",many=True,write_only=True)
+    classes_taught_id =  serializers.PrimaryKeyRelatedField(queryset=Classe.objects.all(), source="classes_taught",write_only=True)
 
      
        
     def to_representation(self, instance):
         representation = super().to_representation(instance)
-        representation["classes_taught"] = ClassSerializer(instance.classes_taught,many=True).data
+        representation["classes_taught"] = ClassSerializer(instance.classes_taught).data
         representation["subjects_taught"] =  SubjectSerializer(instance.subjects_taught).data
         representation["assigned_teacher"] =  TeacherSerializer(instance.assigned_teacher).data
         return representation
@@ -451,22 +460,36 @@ class ClassRoomSerializer(serializers.ModelSerializer):
 
 
 class ScheduleClassSerializer(serializers.ModelSerializer):
-    class_room = ClassRoomSerializer()
-    start_time = serializers.DateTimeField(format="%H:%M")
-    end_time = serializers.DateTimeField(format="%H:%M")
+    # Write-only field to accept only the ID in POST requests
+    class_room_id = serializers.PrimaryKeyRelatedField(
+        queryset=ClassRoom.objects.all(),
+        source='class_room',
+        write_only=True
+    )
+
+    start_time = serializers.TimeField(format="%H:%M")
+    end_time = serializers.TimeField(format="%H:%M")
+
+    def to_representation(self, instance):
+        # Call super correctly for a ModelSerializer
+        representation = super().to_representation(instance)
+        # Add the nested class_room details using ClassRoomSerializer
+        representation['class_room'] = ClassRoomSerializer(instance.class_room).data
+        return representation
 
     class Meta:
         model = ClassSchedule
-        fields = "__all__"
+        fields =  ("class_room_id","start_time","school","end_time","day","id")
+        
         
 class ClassScheduleSerializer(serializers.ModelSerializer):
     class_room = ClassRoomSerializer()
-    start_time = serializers.DateTimeField(format="%H:%M")
-    end_time = serializers.DateTimeField(format="%H:%M")
+    start_time = serializers.TimeField(format="%H:%M")
+    end_time = serializers.TimeField(format="%H:%M")
 
     class Meta:
         model = ClassSchedule
-        fields = ['day', 'start_time', 'end_time', 'class_room', 'school']
+        fields = ['day', 'start_time', 'end_time', 'class_room', 'school',"id"]
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
@@ -693,7 +716,7 @@ class PerformanceSerializer(serializers.ModelSerializer):
         fields = ["id", "performance"]
 
     def get_performance(self, obj):
-        return calculate_performance(obj)
+        return calculate_monthly_performance(obj)
 
 
 class AttendancesSerializer(serializers.ModelSerializer):
