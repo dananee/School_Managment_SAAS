@@ -44,6 +44,8 @@ ADMIN_MEDIA_PREFIX = BASE_DIR / "staticfiles/admin"
 
 SIGNING_KEY = os.environ.get("SIGNING_KEY")
 
+FCM_CREDENTIALS = BASE_DIR / "fcm_credentials.json"
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
@@ -58,9 +60,9 @@ SECRET_KEY = os.environ.get(
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 BACKEND_API_URL = "https://edugenius.tech"
-ALLOWED_HOSTS = ['84.46.240.230', '*']
+ALLOWED_HOSTS = ['195.7.4.12', '*']
 
 CSRF_COOKIE_SECURE = True
 CSRF_COOKIE_HTTPONLY = True
@@ -68,7 +70,7 @@ SESSION_COOKIE_SECURE = True
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:8000",
-    "http://84.46.240.230",
+    "http://195.7.4.12",
     "https://edugenius.tech",
     "http://172.18.0.4:8000",
     "http://127.0.0.1:8000",
@@ -84,7 +86,7 @@ CSRF_TRUSTED_ORIGINS = [
     "http://localhost",
     "http://127.0.0.1",
     "https://edugenius.tech",
-    "http://84.46.240.230",
+    "http://195.7.4.12",
     "http://172.18.0.4:8000",
     "http://0.0.0.0:8000",
     "http://tauri.localhost",

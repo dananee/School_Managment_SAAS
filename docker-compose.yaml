@@ -1,10 +1,10 @@
+
 services:
   nginx:
     build: ./nginx
     image: nginx
     restart: unless-stopped
     container_name: "nginx_cont"
-  
     ports:
       - 80:80
       - 443:443
@@ -12,30 +12,27 @@ services:
       - backend
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
-      - ./certbot/conf/dhparam.pem:/etc/ssl/certs/dhparam.pem 
+      - ./certbot/conf/dhparam.pem:/etc/ssl/certs/dhparam.pem
       - ./certbot/conf:/etc/letsencrypt
-      - ./certbot/www:/var/www/certbot  
+      - ./certbot/www:/var/www/certbot
       - ./staticfiles:/var/www/edugenius.tech/staticfiles
       - ./media:/media/
 
   db:
-    container_name: school-db-container
     image: mysql:8
+    container_name: school-db-container
     restart: always
     ports:
       - "3308:3306"
-    env_file:
-      - ./.env
     environment:
-      - MYSQL_ALLOW_EMPTY_PASSWORD=0
-      - MYSQL_RANDOM_ROOT_PASSWORD=1
-      - MYSQL_ROOT_PASSWORD=${SQL_ROOT_PASSWORD}
-      - MYSQL_USER=${SQL_USER}
-      - MYSQL_PASSWORD=${SQL_PASSWORD}
-      - MYSQL_DATABASE=${SQL_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${SQL_ROOT_PASSWORD}
+      MYSQL_USER: ${SQL_USER}
+      MYSQL_PASSWORD: ${SQL_PASSWORD}
+      MYSQL_DATABASE: ${SQL_DATABASE}
     volumes:
-      - ./mysql_data:/var/lib/mysql/
-
+      - ./mysql_data:/var/lib/mysql
+      - ./my.cnf:/etc/mysql/my.cnf  # Mount the custom my.cnf file
+    
   backend:
     image: school-image
     container_name: backend
@@ -43,18 +40,18 @@ services:
       context: .
       dockerfile: Dockerfile
     command: >
-      sh -c "gunicorn --timeout 500 school_managment_saas.wsgi --workers 3 --bind 0.0.0.0:8000"
+        sh -c "gunicorn school_managment_saas.wsgi --bind 0.0.0.0:8000 --workers 3 --threads 2 --timeout 500"
+
+
     env_file:
       - .env
     environment:
       - DATABASE_URL=mysql://${SQL_USER}:${SQL_PASSWORD}@db:3306/${SQL_DATABASE}
     volumes:
       - .:/school_managment_saas
-      - ./mysql_data:/var/lib/mysql/
       - ./staticfiles:/var/www/edugenius.tech/staticfiles
       - ./media:/media
       - ./logs:/school_managment_saas/logs
-
     depends_on:
       - db
     links:
@@ -67,3 +64,12 @@ services:
       - ./certbot/conf:/etc/letsencrypt
       - ./certbot/www:/var/www/certbot
     command: certonly --webroot -w /var/www/certbot --force-renewal --email eedugenius@gmail.com -d edugenius.tech --agree-tos
+
+  renew-certificates:
+    image: certbot/certbot
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    command: renew --webroot -w /var/www/certbot --quiet --no-self-upgrade
+
+

@@ -1,3 +1,5 @@
+# Adjust this import to your actual User model
+from school_managment.models import Person
 import json
 from rest_framework import serializers
 from .models import (
@@ -19,7 +21,8 @@ from .models import (
     Subject,
     ClassRoom,
     Person,
-    Homework
+    Homework,
+    PubModel
 )
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from djoser.serializers import (
@@ -33,14 +36,12 @@ from django.db.models import Avg
 from django.db.models.functions import TruncMonth
 
 
-
-
 def calculate_monthly_performance(student):
     # Filter results by student and group by month
-    
+
     if not student.exists():
         return []
-    
+
     monthly_performance = (
         Result.objects.filter(student__in=student)
         .annotate(month=TruncMonth('date'))
@@ -54,7 +55,7 @@ def calculate_monthly_performance(student):
         {"date": entry['month'], "average_score": entry['average_score']}
         for entry in monthly_performance
     ]
-    
+
     return performance_data
 
 
@@ -80,7 +81,8 @@ class Base64ImageField(serializers.ImageField):
                 self.fail("invalid_image")
 
             # Generate file name:
-            file_name = str(uuid.uuid4())[:12]  # 12 characters are more than enough.
+            # 12 characters are more than enough.
+            file_name = str(uuid.uuid4())[:12]
             # Get the file name extension:
             file_extension = self.get_file_extension(file_name, decoded_file)
 
@@ -102,11 +104,6 @@ class Base64ImageField(serializers.ImageField):
         return extension
 
 
-from django.contrib.auth.tokens import default_token_generator
-from django.utils.http import urlsafe_base64_decode
-from rest_framework import serializers
-from school_managment.models import Person  # Adjust this import to your actual User model
-
 class CustomPasswordResetConfirmSerializer(serializers.Serializer):
     uid = serializers.CharField()
     token = serializers.CharField()
@@ -121,7 +118,8 @@ class CustomPasswordResetConfirmSerializer(serializers.Serializer):
 
         # Ensure passwords are present
         if not new_password or not re_new_password:
-            raise serializers.ValidationError("Both new password and confirm password are required.")
+            raise serializers.ValidationError(
+                "Both new password and confirm password are required.")
 
         # Validate if passwords match
         if new_password != re_new_password:
@@ -147,13 +145,11 @@ class CustomPasswordResetConfirmSerializer(serializers.Serializer):
     def save(self, **kwargs):
         # Now access the new_password from validated_data
         new_password = self.validated_data["new_password"]
-        
+
         # Set the new password for the user
         self.user.set_password(new_password)
         self.user.save()
         return self.user
-         
-
 
 
 class SchoolDataSerializer(serializers.ModelSerializer):
@@ -173,33 +169,37 @@ class ClassSerializer(serializers.ModelSerializer):
 
 
 class PersonSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True)  # Include password field for writing only
+    # Include password field for writing only
+    password = serializers.CharField(write_only=True)
     birth_date = serializers.DateField(
-        
-        format="%d/%m/%Y", 
+
+        format="%d/%m/%Y",
         input_formats=["%d/%m/%Y", "%d/%m/%Y"]
     )
 
-    
     class Meta:
         model = Person
         fields = "__all__"  # Add other fields as needed
 
     def create(self, validated_data):
-        password = validated_data.pop('password', None)  # Pop password from validated data
+        # Pop password from validated data
+        password = validated_data.pop('password', None)
         instance = super().create(validated_data)  # Call superclass create method
 
         if password:
-            instance.set_password(password)  # Set password using set_password method
+            # Set password using set_password method
+            instance.set_password(password)
             instance.save()  # Save instance to ensure password is hashed
         return instance
 
     def update(self, instance, validated_data):
-        password = validated_data.pop('password', None)  # Pop password from validated data
+        # Pop password from validated data
+        password = validated_data.pop('password', None)
         instance = super().update(instance, validated_data)  # Call superclass update method
 
         if password:
-            instance.set_password(password)  # Set password using set_password method
+            # Set password using set_password method
+            instance.set_password(password)
             instance.save()  # Save instance to ensure password is hashed
         return instance
 
@@ -237,13 +237,16 @@ class PersonSerializer(serializers.ModelSerializer):
 class SchoolMembersSerializer(serializers.ModelSerializer):
     person = PersonSerializer()
     profile_image = Base64ImageField(
-            max_length=None, use_url=True,
-        )
+        max_length=None, use_url=True,
+    )
 
     class Meta:
         model = SchoolMembers
         fields = '__all__'
-        extra_kwargs = {'school': {'required': False}, 'profile_image': {'required': False}}
+        extra_kwargs = {'school': {'required': False},
+                        'profile_image': {'required': False},
+                         'device_token': {'required': False}, 
+                        }
 
     def create(self, validated_data):
         person_data = validated_data.pop('person')
@@ -253,14 +256,16 @@ class SchoolMembersSerializer(serializers.ModelSerializer):
         try:
             person = Person.objects.get(email=email_)
         except Person.DoesNotExist:
-            person_serializer = PersonSerializer(data=person_data, context=self.context)
+            person_serializer = PersonSerializer(
+                data=person_data, context=self.context)
             if person_serializer.is_valid():
                 person = person_serializer.save()
             else:
                 raise serializers.ValidationError("Person data is not valid")
         else:
             # Update existing person with new data
-            person_serializer = PersonSerializer(instance=person, data=person_data, partial=True, context=self.context)
+            person_serializer = PersonSerializer(
+                instance=person, data=person_data, partial=True, context=self.context)
             if person_serializer.is_valid():
                 person = person_serializer.save()
             else:
@@ -271,7 +276,8 @@ class SchoolMembersSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         person_data = validated_data.pop('person')
-        person_serializer = PersonSerializer(instance=instance.person, data=person_data, partial=True, context=self.context)
+        person_serializer = PersonSerializer(
+            instance=instance.person, data=person_data, partial=True, context=self.context)
         if person_serializer.is_valid():
             person = person_serializer.save()
             validated_data['person'] = person
@@ -280,9 +286,29 @@ class SchoolMembersSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Person data is not valid")
 
 
+class ParentLightSerializer(serializers.ModelSerializer):
+    first_name = serializers.CharField(source='user.person.first_name')
+    last_name = serializers.CharField(source='user.person.last_name')
+    phone_number = serializers.CharField(source='user.person.phone')
+    gender = serializers.CharField(source='user.person.gender')
+    email = serializers.EmailField(source='user.person.email')
+    device_token = serializers.CharField(source='user.device_token')
+    profile_image = serializers.CharField(source='user.profile_image')
+    user_id = serializers.IntegerField(source='user.id')
+    person_id = serializers.IntegerField(source='user.person.id')
+
+    class Meta:
+        model = Parent
+        fields = [
+            'id', 'user_id', 'person_id', 'first_name', 'last_name', 
+            'phone_number', 'gender', 'email', 'device_token','profile_image'
+        ]
+    
+
 
 class ParentSerializer(serializers.ModelSerializer):
     user = SchoolMembersSerializer()
+
     class Meta:
         model = Parent
         fields = "__all__"
@@ -291,16 +317,13 @@ class ParentSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         person_data = validated_data.pop("user")
         person_data["school"] = person_data["school"].id
-    
 
- 
         member_serializer = SchoolMembersSerializer(
             data=person_data, context=self.context
         )  # Pass context
         if member_serializer.is_valid():
             person = member_serializer.save()  # Use save() to create the person object
             parent = Parent.objects.create(user=person, **validated_data)
-         
 
             return parent
         else:
@@ -311,7 +334,7 @@ class ParentSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         user_data = validated_data.pop("user")
         user_data["school"] = user_data["school"].id
-     
+
         member_serializer = SchoolMembersSerializer(
             instance=instance.user, data=user_data, partial=True, context=self.context
         )
@@ -320,20 +343,22 @@ class ParentSerializer(serializers.ModelSerializer):
             validated_data["user"] = person
             return super().update(instance, validated_data)
         else:
-            raise serializers.ValidationError({"error": member_serializer.errors})
+            raise serializers.ValidationError(
+                {"error": member_serializer.errors})
 
 
 class TeacherSerializer(serializers.ModelSerializer):
     user = SchoolMembersSerializer()
- 
+
     class Meta:
         model = Teacher
-        fields = ("id","user","qualification" ,"experience","specialization","address","joining_date")  # Add other fields as needed
-       
+        fields = ("id", "user", "qualification", "experience", "specialization",
+                  "address", "joining_date")  # Add other fields as needed
+
     def update(self, instance, validated_data):
         user_data = validated_data.pop("user")
         user_data["school"] = user_data["school"].id
-     
+
         member_serializer = SchoolMembersSerializer(
             instance=instance.user, data=user_data, partial=True, context=self.context
         )
@@ -342,12 +367,13 @@ class TeacherSerializer(serializers.ModelSerializer):
             validated_data["user"] = person
             return super().update(instance, validated_data)
         else:
-            raise serializers.ValidationError({"error": member_serializer.errors})
+            raise serializers.ValidationError(
+                {"error": member_serializer.errors})
 
     def create(self, validated_data):
         person_data = validated_data.pop("user")
         person_data["school"] = person_data["school"].id
- 
+
         member_serializer = SchoolMembersSerializer(
             data=person_data, context=self.context
         )  # Pass context
@@ -364,17 +390,26 @@ class TeacherSerializer(serializers.ModelSerializer):
 
 class StudentSerializer(serializers.ModelSerializer):
     user = SchoolMembersSerializer()
-    classe_id = serializers.PrimaryKeyRelatedField(queryset=Classe.objects.all(),source='classe',write_only=True)
+    classe_id = serializers.PrimaryKeyRelatedField(
+        queryset=Classe.objects.all(), source='classe', write_only=True)
 
     class Meta:
         model = Student
-        fields =  ("id","user", "classe_id") # Add other fields as needed
-        
+        fields = ("id", "user", "classe_id")  # Add other fields as needed
+
     def to_representation(self, instance):
         representation = super().to_representation(instance)
         representation['classe'] = ClassSerializer(instance.classe).data
+        
+         # Include parents only if they are available
+        parents = instance.parents.all()
+        if parents.exists():
+            representation['parents'] = ParentLightSerializer(parents, many=True).data
+        else:
+            representation['parents'] = None
+            
         return representation
-    
+
     def create(self, validated_data):
         person_data = validated_data.pop('user')
         person_data['school'] = person_data['school'].id
@@ -393,29 +428,31 @@ class StudentSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 f"Memeber data is not valid {member_serializer.errors}")
 
-    
     def update(self, instance, validated_data):
         user_data = validated_data.pop('user')
         user_data['school'] = user_data['school'].id
-       
-        member_serializer = SchoolMembersSerializer(instance=instance.user, data=user_data, partial=True, context=self.context)
+
+        member_serializer = SchoolMembersSerializer(
+            instance=instance.user, data=user_data, partial=True, context=self.context)
         if member_serializer.is_valid():
             person = member_serializer.save()
             validated_data['user'] = person
             return super().update(instance, validated_data)
         else:
-            raise serializers.ValidationError({"error":member_serializer.errors})
+            raise serializers.ValidationError(
+                {"error": member_serializer.errors})
 
 
 class SubjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = Subject
-        fields = ["id", "subject_name","school"]
+        fields = ["id", "subject_name", "school"]
+
 
 class ProfileParentSerializer(serializers.ModelSerializer):
     user = SchoolMembersSerializer(read_only=True)
-    student = StudentSerializer(read_only=True,many=True)
-    
+    student = StudentSerializer(read_only=True, many=True)
+
     class Meta:
         model = Parent
         fields = "__all__"
@@ -424,18 +461,22 @@ class ProfileParentSerializer(serializers.ModelSerializer):
 
 
 class ClassRoomSerializer(serializers.ModelSerializer):
- 
-    subjects_taught_id = serializers.PrimaryKeyRelatedField(queryset=Subject.objects.all(), source="subjects_taught",write_only=True)
-    assigned_teacher_id = serializers.PrimaryKeyRelatedField(queryset=Teacher.objects.all(), source="assigned_teacher",write_only=True)
-    classes_taught_id =  serializers.PrimaryKeyRelatedField(queryset=Classe.objects.all(), source="classes_taught",write_only=True)
 
-     
-       
+    subjects_taught_id = serializers.PrimaryKeyRelatedField(
+        queryset=Subject.objects.all(), source="subjects_taught", write_only=True)
+    assigned_teacher_id = serializers.PrimaryKeyRelatedField(
+        queryset=Teacher.objects.all(), source="assigned_teacher", write_only=True)
+    classes_taught_id = serializers.PrimaryKeyRelatedField(
+        queryset=Classe.objects.all(), source="classes_taught", write_only=True)
+
     def to_representation(self, instance):
         representation = super().to_representation(instance)
-        representation["classes_taught"] = ClassSerializer(instance.classes_taught).data
-        representation["subjects_taught"] =  SubjectSerializer(instance.subjects_taught).data
-        representation["assigned_teacher"] =  TeacherSerializer(instance.assigned_teacher).data
+        representation["classes_taught"] = ClassSerializer(
+            instance.classes_taught).data
+        representation["subjects_taught"] = SubjectSerializer(
+            instance.subjects_taught).data
+        representation["assigned_teacher"] = TeacherSerializer(
+            instance.assigned_teacher).data
         return representation
 
     class Meta:
@@ -474,14 +515,16 @@ class ScheduleClassSerializer(serializers.ModelSerializer):
         # Call super correctly for a ModelSerializer
         representation = super().to_representation(instance)
         # Add the nested class_room details using ClassRoomSerializer
-        representation['class_room'] = ClassRoomSerializer(instance.class_room).data
+        representation['class_room'] = ClassRoomSerializer(
+            instance.class_room).data
         return representation
 
     class Meta:
         model = ClassSchedule
-        fields =  ("class_room_id","start_time","school","end_time","day","id")
-        
-        
+        fields = ("class_room_id", "start_time",
+                  "school", "end_time", "day", "id")
+
+
 class ClassScheduleSerializer(serializers.ModelSerializer):
     class_room = ClassRoomSerializer()
     start_time = serializers.TimeField(format="%H:%M")
@@ -489,7 +532,9 @@ class ClassScheduleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ClassSchedule
-        fields = ['day', 'start_time', 'end_time', 'class_room', 'school',"id"]
+        fields = ['day', 'start_time', 'end_time',
+                  'class_room', 'school', "id"]
+
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
@@ -502,9 +547,10 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         data["is_staff"] = self.user.is_staff
         data["is_owner"] = self.user.is_owner
 
-        ismember = SchoolMembers.objects.filter(person_id=self.user.id).exists()
-        if(ismember):
-            member =  SchoolMembers.objects.get(person_id=self.user.id)
+        ismember = SchoolMembers.objects.filter(
+            person_id=self.user.id).exists()
+        if (ismember):
+            member = SchoolMembers.objects.get(person_id=self.user.id)
             serializers = SchoolMembersSerializer(instance=member)
             data["data"] = serializers.data
 
@@ -537,7 +583,8 @@ class AttendanceSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
-        representation["schedule"] = ScheduleClassSerializer(instance.schedule).data
+        representation["schedule"] = ScheduleClassSerializer(
+            instance.schedule).data
         return representation
 
 
@@ -555,12 +602,14 @@ class NotificationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Notification
-        fields = ("id", "message", "role", "sender_id", "status", "author", "timestamp")
+        fields = ("id", "message", "role", "sender_id",
+                  "status", "author", "timestamp")
 
     def to_representation(self, instance):
 
         representation = super().to_representation(instance)
-        representation["sender"] = SchoolMembersSerializer(instance.sender).data
+        representation["sender"] = SchoolMembersSerializer(
+            instance.sender).data
         return representation
 
 
@@ -583,7 +632,8 @@ class StaffSerialization(serializers.ModelSerializer):
             validated_data["user"] = person
             return super().update(instance, validated_data)
         else:
-            raise serializers.ValidationError({"error": member_serializer.errors})
+            raise serializers.ValidationError(
+                {"error": member_serializer.errors})
 
     def create(self, validated_data):
         person_data = validated_data.pop("user")
@@ -604,9 +654,6 @@ class StaffSerialization(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 f"Memeber data is not valid {member_serializer.errors}"
             )
-
-
- 
 
 
 class ResultSerializers(serializers.ModelSerializer):
@@ -661,7 +708,10 @@ class HomeworkSerializer(serializers.ModelSerializer):
     teacher_id = serializers.PrimaryKeyRelatedField(
         queryset=Teacher.objects.all(), source="assigned_by", write_only=True, required=False
     )
-    
+    classe_id = serializers.PrimaryKeyRelatedField(
+        queryset=Classe.objects.all(), source="assigned_class", write_only=True, required=False
+    )
+
     subject_id = serializers.PrimaryKeyRelatedField(
         queryset=Subject.objects.all(), source="subject", write_only=True, required=False
     )
@@ -673,40 +723,33 @@ class HomeworkSerializer(serializers.ModelSerializer):
     def validate(self, data):
         # Make sure either teacher_id or assigned_by is set
         if not data.get('assigned_by') and not data.get('teacher_id'):
-            raise serializers.ValidationError({"assigned_by": "This field is required."})
-        
+            raise serializers.ValidationError(
+                {"assigned_by": "This field is required."})
+
         # Make sure either subject_id or subject is set
         if not data.get('subject') and not data.get('subject_id'):
-            raise serializers.ValidationError({"subject": "This field is required."})
-        
+            raise serializers.ValidationError(
+                {"subject": "This field is required."})
+            
+        if not data.get('assigned_class') and not data.get('classe_id'):
+            raise serializers.ValidationError(
+                {"assigned_class": "This field is required."})
+
         return data
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
-        
-        # Check if the assigned_by (teacher) exists before serializing
-        representation["assigned_by"] = TeacherSerializer(instance.assigned_by).data
-        representation["subject"] = SubjectSerializer(instance.subject).data
-       
-        return representation
 
-         
-
-    def to_representation(self, instance):
-        representation = super().to_representation(instance)
-        
         # Check if the assigned_by (teacher) exists before serializing
         representation["assigned_by"] = TeacherSerializer(
-                instance.assigned_by
-        ).data
-        
-        representation["subject"] = SubjectSerializer(
-                instance.subject
-        ).data
-       
+            instance.assigned_by).data
+        representation["subject"] = SubjectSerializer(instance.subject).data
+        representation["assigned_class"] = ClassSerializer(instance.assigned_class).data
+
         return representation
 
-    
+     
+
 
 class PerformanceSerializer(serializers.ModelSerializer):
     performance = serializers.SerializerMethodField()
@@ -724,7 +767,14 @@ class AttendancesSerializer(serializers.ModelSerializer):
         model = Attendance
         fields = ["id", "date", "student"]
 
+
+
 class FCMDeviceSerializer(serializers.ModelSerializer):
     class Meta:
         model = FCMDevice
         fields = ('user', 'token')
+        
+class PubSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PubModel
+        fields = "__all__"

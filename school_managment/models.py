@@ -7,7 +7,7 @@ from django.contrib.auth.models import Permission, Group
 from django.contrib.auth.hashers import make_password
 from django.core.validators import MaxValueValidator, MinValueValidator
 from phonenumber_field.modelfields import PhoneNumberField
-    
+
 
 def upload_to(instance, filename):
     return f"images/{filename}"
@@ -94,12 +94,15 @@ class Person(AbstractBaseUser):
     last_name = models.CharField(max_length=255)
     phone = PhoneNumberField(null=True, blank=True, unique=False)
 
-    gender = models.CharField(max_length=1, choices=Genders, default=Genders.MEN)
+    gender = models.CharField(
+        max_length=1, choices=Genders, default=Genders.MEN)
     email = models.EmailField(unique=True)
     is_owner = models.BooleanField(default=False)
     is_active = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)  # Add is_staff field
     is_superuser = models.BooleanField(default=False)
+    is_teacher = models.BooleanField(default=False)
+    is_student = models.BooleanField(default=False)
     birth_date = models.DateField(blank=True, null=True)
     objects = PersonManager()
     USERNAME_FIELD = "email"
@@ -121,10 +124,14 @@ class Person(AbstractBaseUser):
 
 class SchoolMembers(models.Model):
 
-    profile_image = models.ImageField(upload_to=upload_to, blank=True, null=True)
+    profile_image = models.ImageField(
+        upload_to=upload_to, blank=True, null=True)
     role = models.CharField(max_length=2, choices=Roles, default=Roles.STAFF)
     person = models.OneToOneField(Person, on_delete=models.CASCADE)
-    school = models.ForeignKey(SchoolDataModel, on_delete=models.CASCADE, null=True)
+    school = models.ForeignKey(
+        SchoolDataModel, on_delete=models.CASCADE, null=True)
+    device_token = models.CharField(max_length=255, blank=True, null=True)  # Add this field
+
 
     class Meta:
         db_table = "SchoolMembers"
@@ -132,7 +139,8 @@ class SchoolMembers(models.Model):
         verbose_name_plural = "SchoolMembers"
 
     def __str__(self) -> str:
-        return f"ID: {self.id}  Full Name:   {self.person.first_name} {self.person.last_name}  - ROLE:    {self.role} -  School:  {self.school}"
+        return f"{self.person.first_name} {self.person.last_name}"
+
 
 
 class Admin(models.Model):
@@ -147,7 +155,6 @@ class Admin(models.Model):
 
 class Student(models.Model):
     # Student-specific fields
-
     classe = models.ForeignKey("Classe", on_delete=models.CASCADE)
     user = models.OneToOneField(SchoolMembers, on_delete=models.CASCADE)
 
@@ -161,8 +168,8 @@ class Student(models.Model):
 
 
 class Parent(models.Model):
-
-    student = models.ManyToManyField(Student, related_name="parents", blank=True,default=[])
+    student = models.ManyToManyField(
+        Student, related_name="parents", blank=True, default=[])
     user = models.OneToOneField(SchoolMembers, on_delete=models.CASCADE)
 
     class Meta:
@@ -213,9 +220,8 @@ class Teacher(models.Model):
     qualification = models.CharField(max_length=255, null=False, blank=False)
     experience = models.IntegerField(null=False, blank=False)
     specialization = models.CharField(max_length=255, null=False, blank=False)
-    address = models.CharField(max_length=255,null=False, blank=False)
+    address = models.CharField(max_length=255, null=False, blank=False)
     joining_date = models.DateField(auto_now_add=True)
-    
 
     class Meta:
         ordering = ['joining_date']
@@ -242,21 +248,26 @@ class Subject(models.Model):
     def __str__(self) -> str:
         return f"{self.id} - {self.subject_name}"
 
+
 class Homework(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField()
     due_date = models.DateField()
-    assigned_by = models.ForeignKey(Teacher, on_delete=models.CASCADE,null=True, blank=True)  # Assuming teacher is a user
+    assigned_by = models.ForeignKey(
+        # Assuming teacher is a user
+        Teacher, on_delete=models.CASCADE, null=True, blank=True)
     assigned_class = models.ForeignKey(Classe, on_delete=models.CASCADE)
-    subject = models.ForeignKey(Subject, on_delete=models.CASCADE,null=True, blank=True)
+    subject = models.ForeignKey(
+        Subject, on_delete=models.CASCADE, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    school=school = models.ForeignKey(
+    school = school = models.ForeignKey(
         SchoolDataModel, on_delete=models.CASCADE, null=False, blank=False
     )
 
     def __str__(self) -> str:
         return f"{self.id} - {self.title} -> {self.assigned_class}"
+
 
 class Attendance(models.Model):
 
@@ -264,7 +275,8 @@ class Attendance(models.Model):
     schedule = models.ForeignKey(
         "ClassSchedule", on_delete=models.CASCADE, null=True, blank=False
     )
-    student = models.ManyToManyField(Student, related_name="student", blank=False)
+    student = models.ManyToManyField(
+        Student, related_name="student", blank=False)
     school = models.ForeignKey(
         SchoolDataModel, on_delete=models.CASCADE, null=False, blank=False
     )
@@ -305,7 +317,8 @@ class Exam(models.Model):
     school = models.ForeignKey(
         SchoolDataModel, on_delete=models.CASCADE, null=True, blank=True
     )
-    class_association = models.ForeignKey(Classe, on_delete=models.CASCADE, null=True)
+    class_association = models.ForeignKey(
+        Classe, on_delete=models.CASCADE, null=True)
     subject_association = models.ForeignKey(
         Subject, on_delete=models.CASCADE, null=True
     )
@@ -358,7 +371,7 @@ class ClassRoom(models.Model):
         blank=True,
         null=True,
     )
-  
+
     school = models.ForeignKey(
         SchoolDataModel, on_delete=models.CASCADE, null=True, blank=True
     )
@@ -386,7 +399,7 @@ class ClassSchedule(models.Model):
             ("Sunday", "Sunday"),
         ],
     )
-    start_time =  models.TimeField(help_text="Enter time in HH:mm format")
+    start_time = models.TimeField(help_text="Enter time in HH:mm format")
     end_time = models.TimeField(help_text="Enter time in HH:mm format")
     class_room = models.ForeignKey(ClassRoom, on_delete=models.CASCADE)
     school = models.ForeignKey(
@@ -406,7 +419,8 @@ class ClassSchedule(models.Model):
 class Events(models.Model):
 
     event_name = models.CharField(max_length=200, blank=False, null=False)
-    desricption = models.TextField(max_length=300, blank=True, default="no description")
+    desricption = models.TextField(
+        max_length=300, blank=True, default="no description")
     date_start = models.DateTimeField()
     date_end = models.DateTimeField()
     color = models.CharField(max_length=12)
@@ -450,3 +464,13 @@ class FCMDevice(models.Model):
 
     def __str__(self):
         return self.token
+
+class PubModel(models.Model):
+    title = models.CharField(max_length=255)
+    body = models.CharField(max_length=255)
+    link = models.CharField(max_length=255)
+    image = models.ImageField(
+        upload_to=upload_to, blank=True, null=True)
+
+    def __str__(self):
+        return self.title
