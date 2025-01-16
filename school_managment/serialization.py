@@ -1,4 +1,6 @@
 # Adjust this import to your actual User model
+ 
+ 
 from school_managment.models import Person
 import json
 from rest_framework import serializers
@@ -7,7 +9,10 @@ from .models import (
     ClassSchedule,
     Events,
     Exam,
+    Expense,
     FCMDevice,
+    FeeStructure,
+    FinancialReport,
     Notification,
     Parent,
     Result,
@@ -22,7 +27,9 @@ from .models import (
     ClassRoom,
     Person,
     Homework,
-    PubModel
+    PubModel,
+    MonthlyPayment,
+    Transaction
 )
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from djoser.serializers import (
@@ -103,7 +110,84 @@ class Base64ImageField(serializers.ImageField):
 
         return extension
 
+#Acounting
+class FeeStructureSerializer(serializers.ModelSerializer):
+    classe_fee_id = serializers.PrimaryKeyRelatedField(
+        queryset=Classe.objects.all(), source='classe_fee', write_only=True)
+    
+    class Meta:
+        model = FeeStructure
+        fields = '__all__'
 
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation['classe_fee'] = ClassSerializer(instance.classe_fee).data
+        
+        return representation
+    
+    def validate(self, data):
+        classe_fee = data.get('classe_fee')
+        if classe_fee:  # Check if classe_fee is provided
+            # Check if a FeeStructure with this classe_fee already exists
+            if FeeStructure.objects.filter(classe_fee=classe_fee).exists():
+                raise serializers.ValidationError({
+                    'error':'free structure for this classd already exists.'
+                })
+        return data
+        
+class ExpenseSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Expense
+        fields = '__all__'
+
+class TransactionSerializer(serializers.ModelSerializer):
+    student_id = serializers.PrimaryKeyRelatedField(
+        queryset=Student.objects.all(), source="student", write_only=True, allow_null=True
+    )
+    
+    expense_id = serializers.PrimaryKeyRelatedField(
+        queryset=Expense.objects.all(), source="expense", write_only=True, allow_null=True
+    )
+    
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        if instance.student != None:
+            representation["student"] = StudentLightSerializer(instance.student).data
+        else:
+            representation["student"] = None
+        
+        if instance.expense != None:
+            representation["expense"] = ExpenseSerializer(instance.expense).data
+        else:
+            representation["expense"] = None
+        return representation
+    
+    class Meta:
+        model = Transaction
+        fields = '__all__'
+
+class FinancialReportSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FinancialReport
+        fields = '__all__'
+        
+class MonthlyPaymentSerializer(serializers.ModelSerializer):
+    student_id = serializers.PrimaryKeyRelatedField(
+        queryset=Student.objects.all(), source="student", write_only=True, allow_null=True
+    )
+    
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        if instance.student != None:
+            representation["student"] = StudentLightSerializer(instance.student).data
+        return representation
+    
+    class Meta:
+        model = MonthlyPayment
+        fields =  "__all__"
+
+
+       
 class CustomPasswordResetConfirmSerializer(serializers.Serializer):
     uid = serializers.CharField()
     token = serializers.CharField()
@@ -303,7 +387,45 @@ class ParentLightSerializer(serializers.ModelSerializer):
             'id', 'user_id', 'person_id', 'first_name', 'last_name', 
             'phone_number', 'gender', 'email', 'device_token','profile_image'
         ]
+        
+        
+class StudentLightSerializer(serializers.ModelSerializer):
+    first_name = serializers.CharField(source='user.person.first_name')
+    last_name = serializers.CharField(source='user.person.last_name')
+    phone_number = serializers.CharField(source='user.person.phone')
+    gender = serializers.CharField(source='user.person.gender')
+    email = serializers.EmailField(source='user.person.email')
+    device_token = serializers.CharField(source='user.device_token')
+    profile_image = serializers.CharField(source='user.profile_image')
+    user_id = serializers.IntegerField(source='user.id')
+    person_id = serializers.IntegerField(source='user.person.id')
+
+    class Meta:
+        model = Student
+        fields = [
+            'id', 'user_id', 'person_id', 'first_name', 'last_name', 
+            'phone_number', 'gender', 'email', 'device_token','profile_image'
+        ]
+        
     
+
+class TeacherLightSerializer(serializers.ModelSerializer):
+    first_name = serializers.CharField(source='user.person.first_name')
+    last_name = serializers.CharField(source='user.person.last_name')
+    phone_number = serializers.CharField(source='user.person.phone')
+    gender = serializers.CharField(source='user.person.gender')
+    email = serializers.EmailField(source='user.person.email')
+    device_token = serializers.CharField(source='user.device_token')
+    profile_image = serializers.CharField(source='user.profile_image')
+    user_id = serializers.IntegerField(source='user.id')
+    person_id = serializers.IntegerField(source='user.person.id')
+
+    class Meta:
+        model = Teacher
+        fields = [
+            'id', 'user_id', 'person_id', 'first_name', 'last_name', 
+            'phone_number', 'gender', 'email', 'device_token','profile_image'
+        ]
 
 
 class ParentSerializer(serializers.ModelSerializer):
@@ -392,16 +514,23 @@ class StudentSerializer(serializers.ModelSerializer):
     user = SchoolMembersSerializer()
     classe_id = serializers.PrimaryKeyRelatedField(
         queryset=Classe.objects.all(), source='classe', write_only=True)
-
+    
+      # Handle null monthly_payment
+    
     class Meta:
         model = Student
-        fields = ("id", "user", "classe_id")  # Add other fields as needed
+        fields = ("id", "user", "classe_id" )  # Add other fields as needed
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
         representation['classe'] = ClassSerializer(instance.classe).data
         
          # Include parents only if they are available
+        monthly_payment = MonthlyPayment.objects.filter(student=instance.id)
+        
+        representation['monthly_payment'] = MonthlyPaymentSerializer(monthly_payment,read_only=True, many=True,allow_null=True).data
+        
+            
         parents = instance.parents.all()
         if parents.exists():
             representation['parents'] = ParentLightSerializer(parents, many=True).data
@@ -525,16 +654,24 @@ class ScheduleClassSerializer(serializers.ModelSerializer):
                   "school", "end_time", "day", "id")
 
 
+ 
 class ClassScheduleSerializer(serializers.ModelSerializer):
     class_room = ClassRoomSerializer()
     start_time = serializers.TimeField(format="%H:%M")
     end_time = serializers.TimeField(format="%H:%M")
-
     class Meta:
         model = ClassSchedule
-        fields = ['day', 'start_time', 'end_time',
-                  'class_room', 'school', "id"]
+        fields = ['id', 'day', 'start_time', 'end_time', 'class_room', 'school']
 
+    def validate(self, data):
+        # Manually call the model's clean method to perform validation
+        try:
+            instance = ClassSchedule(**data)
+            instance.clean()  # Run the model's validation logic
+        except ValidationError as e:
+            raise serializers.ValidationError(e.message)  # Convert ValidationError to DRF ValidationError
+
+        return data
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
@@ -545,7 +682,9 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         data["access"] = str(refresh.access_token)
         data["user_id"] = self.user.id
         data["is_staff"] = self.user.is_staff
+        data["is_teacher"] = self.user.is_teacher
         data["is_owner"] = self.user.is_owner
+        data["is_student"] = self.user.is_student
 
         ismember = SchoolMembers.objects.filter(
             person_id=self.user.id).exists()
@@ -778,3 +917,8 @@ class PubSerializer(serializers.ModelSerializer):
     class Meta:
         model = PubModel
         fields = "__all__"
+        
+
+ 
+
+

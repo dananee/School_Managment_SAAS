@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import ClassRoom, Homework, ClassSchedule, Events, FCMDevice, Notification, PubModel, SchoolDataModel, Teacher, SchoolMembers, Person, Student, Parent, Admin, Staff, Classe, Exam, Result, Attendance, Subject
+from .models import ClassRoom, Expense, FeeStructure, FinancialReport, Homework, ClassSchedule, Events, FCMDevice, MonthlyPayment, Notification, PubModel, SchoolDataModel, Teacher, SchoolMembers, Person, Student, Parent, Admin, Staff, Classe, Exam, Result, Attendance, Subject, Transaction
 # Register your models here.
 admin.autodiscover()
 admin.site.enable_nav_sidebar = True
@@ -23,6 +23,12 @@ admin.site.register(Events)
 admin.site.register(Notification)
 admin.site.register(Homework)
 admin.site.register(FCMDevice)
+
+admin.site.register(FeeStructure)
+admin.site.register(Expense)
+admin.site.register(Transaction)
+admin.site.register(FinancialReport)
+admin.site.register(MonthlyPayment)
 
 
 @admin.register(Teacher)
@@ -52,7 +58,7 @@ class TeacherAdmin(admin.ModelAdmin):
 
 @admin.register(Staff)
 class StaffAdmin(admin.ModelAdmin):
-    list_display = ('user', 'get_email', 'position',
+    list_display = ('id','user', 'get_email', 'position',
                     )
 
     search_fields = ('user__person__first_name', 'user__person__last_name',
@@ -72,7 +78,7 @@ class StaffAdmin(admin.ModelAdmin):
 
 @admin.register(Student)
 class StudentAdmin(admin.ModelAdmin):
-    list_display = ('user', 'get_email', 'get_classe_name', 'get_classe_grade')
+    list_display = ('id','user', 'get_email', 'get_classe_name', 'get_classe_grade')
     list_filter = ('classe__grade', 'classe__class_name')
     search_fields = ('user__person__first_name', 'user__person__last_name',
                      'user__person__email')
@@ -83,6 +89,8 @@ class StudentAdmin(admin.ModelAdmin):
         }),
        
     )
+    
+     
 
     @admin.display(description='Email')
     def get_email(self, obj):

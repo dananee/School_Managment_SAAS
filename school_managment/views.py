@@ -23,7 +23,11 @@ from .serialization import (
     CustomTokenObtainPairSerializer,
     EventsSerializer,
     ExamSerializers,
+    ExpenseSerializer,
     FCMDeviceSerializer,
+    FeeStructureSerializer,
+    FinancialReportSerializer,
+    MonthlyPaymentSerializer,
     NotificationSerializer,
     ParentSerializer,
     PerformanceSerializer,
@@ -34,13 +38,16 @@ from .serialization import (
     ClassSerializer,
     SchoolMembersSerializer,
     StaffSerialization,
+    StudentLightSerializer,
     StudentSerializer,
+    TeacherLightSerializer,
     TeacherSerializer,
     SubjectSerializer,
     ClassRoomSerializer,
     HomeworkSerializer,
     ProfileParentSerializer,
     PubSerializer,
+    TransactionSerializer,
     calculate_monthly_performance
 )
 
@@ -50,7 +57,11 @@ from .models import (
     ClassSchedule,
     Events,
     Exam,
+    Expense,
     FCMDevice,
+    FeeStructure,
+    FinancialReport,
+    MonthlyPayment,
     Notification,
     Parent,
     Person,
@@ -64,7 +75,8 @@ from .models import (
     Subject,
     ClassRoom,
     Homework,
-    PubModel
+    PubModel,
+    Transaction
 )
 from rest_framework import viewsets
 from rest_framework import status
@@ -74,7 +86,7 @@ from django.contrib.auth.tokens import default_token_generator
 from rest_framework import generics, status
 
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
-
+from django_filters.rest_framework import DjangoFilterBackend
 
 
 # from djoser.views import PasswordResetConfirmView as DjoserPasswordResetConfirmView
@@ -90,9 +102,9 @@ from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 
 from django.views.generic import TemplateView
+from django.db.models import Sum
 
-channel_layer = get_channel_layer()
-
+ 
 from .NotifManager import send_notification,send_bulk_notifications,send_bulk_class_notifications
 
 class HomePage(TemplateView):
@@ -133,25 +145,7 @@ def calculateAttendSt(schoolId):
     }
 
 
-def send_notification_by_role(role, message, data):
-
-    users_with_role = SchoolMembers.objects.filter(role=role)
-    for school_member in users_with_role:
-
-        notification_serializer = NotificationSerializer(data=data)
-
-        if notification_serializer.is_valid():
-
-            notification_serializer.save()
-        now = datetime.now()
-        async_to_sync(channel_layer.group_send)(
-            f"role_{role}",
-            {
-                "type": "send_notification",
-                "message": message,
-                "timestamp": now,  # Convert timestamp to ISO format
-            },
-        )
+ 
 
 
 
@@ -202,8 +196,24 @@ class ClassViewSet(viewsets.ModelViewSet):
         serializer = ClassSerializer(queryset, many=True)
         return Response(serializer.data)
 
+class TeacherLightViewSet(viewsets.ModelViewSet):
+    queryset = Teacher.objects.order_by('id')
+    serializer_class = TeacherLightSerializer
+    
+    def list(self, request):
+        try:
+            school_id = request.query_params.get("school_id")
+            queryset = Teacher.objects.filter(user__school=school_id)
+
+            serializer = TeacherLightSerializer(queryset, many=True)
+            return Response(serializer.data)
+        
+        except Subject.DoesNotExist:
+                return Response(status=status.HTTP_404_NOT_FOUND)
+
 
 class TeacherViewSet(viewsets.ModelViewSet):
+    
     queryset = Teacher.objects.order_by('id')
     serializer_class = TeacherSerializer
     permission_classes_by_action = {
@@ -573,6 +583,7 @@ class SchoolMembersViewSet(viewsets.ModelViewSet):
                 for permission in self.permission_classes_by_action[self.action]
             ]
         except KeyError:
+            
             # action is not set return default permission_classes
             return [
                 permission()
@@ -632,6 +643,15 @@ class SchoolMembersViewSet(viewsets.ModelViewSet):
 class ScheduleClassesViewSet(viewsets.ModelViewSet):
     queryset = ClassSchedule.objects.all()
     serializer_class = ScheduleClassSerializer
+    
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            self.perform_create(serializer)
+            headers = self.get_success_headers(serializer.data)
+            return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def list(self, request):
         school_id = request.query_params.get("school_id")
@@ -893,6 +913,27 @@ class ResultView(viewsets.ModelViewSet):
 
         serializer = self.serializer_class(queryset, many=True)
         return Response(serializer.data)
+    
+    @action(detail=False, methods=['get'], url_path='student-result')
+    def student_result(self, request):
+        student_id = request.query_params.get("student_id")
+        
+        if not student_id:
+            return Response(
+                {"error": "student_ids are required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            queryset = self.queryset.model.objects.filter(
+                 student=student_id)
+            serializer = self.serializer_class(queryset, many=True)
+            return Response(serializer.data)
+        except Exception as e:
+            return Response(
+                {"error": "Failed Student Error.", "details": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 class StaffView(viewsets.ModelViewSet):
@@ -1283,9 +1324,182 @@ class NotificationViewSet(viewsets.ViewSet):
                 {"error": "Failed to send notifications.", "details": str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-    
-
+ 
 
 class PubView(viewsets.ModelViewSet):
     queryset = PubModel.objects.all()
-    serializer = PubSerializer
+    serializer_class = PubSerializer
+    pagination_class = None
+    
+
+
+class MonthlyPaymentViewSet(viewsets.ModelViewSet):
+    queryset = MonthlyPayment.objects.all()
+    serializer_class = MonthlyPaymentSerializer
+    permission_classes = [IsStaffOrAdminUser]
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['student']
+    
+    
+    @action(detail=False, methods=['get'])
+    def total_monthly_payment(self, request, *args, **kwargs):
+        student_id = request.query_params.get('student')
+        if not student_id:
+            return Response({"error": "student_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            student = Student.objects.get(id=student_id)
+        except Student.DoesNotExist:
+            return Response({"error": "Student not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        # Calculate the total monthly payment for the student
+        total_payment = MonthlyPayment.objects.filter(student=student).aggregate(
+            total_amount_paid=Sum('amount_paid'),
+            total_amount_due=Sum('total_amount_due')
+        )
+
+        response_data = {
+            "student_id": student.id,
+            "student_name": f"{student.user.person.last_name} {student.user.person.first_name}",
+            "total_amount_paid": total_payment['total_amount_paid'] or 0,
+            "total_amount_due": total_payment['total_amount_due'] or 0,
+        }
+
+        return Response(response_data)
+
+    @action(detail=False, methods=['post'])
+    def bulk_payment(self, request, *args, **kwargs):
+        student_id = request.data.get('student_id')
+        start_date = request.data.get('start_date')  # Start of the payment period (e.g., "2023-12-01")
+        end_date = request.data.get('end_date')  # End of the payment period (e.g., "2024-01-31")
+        total_amount_paid = request.data.get('amount_paid')
+        total_amount_due = request.data.get('total_amount_due', 0.0)  # Total amount due for the period
+
+        try:
+            student = Student.objects.get(id=student_id)
+        except Student.DoesNotExist:
+            return Response({"error": "Student not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        # Create a single payment for the date range
+        payment = MonthlyPayment(
+            student=student,
+            amount_paid=total_amount_paid,
+            total_amount_due=total_amount_due,
+            start_date=start_date,
+            end_date=end_date,
+        )
+        payment.save()
+
+        serializer = MonthlyPaymentSerializer(payment)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+    @action(detail=True, methods=['patch'])
+    def update_payment(self, request, pk=None):
+        try:
+            payment = MonthlyPayment.objects.get(pk=pk)
+        except MonthlyPayment.DoesNotExist:
+            return Response({"error": "Payment not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        # Update the payment with the provided data
+        payment.amount_paid = request.data.get('amount_paid', payment.amount_paid)
+        payment.total_amount_due = request.data.get('total_amount_due', payment.total_amount_due)
+        payment.start_date = request.data.get('start_date', payment.start_date)
+        payment.end_date = request.data.get('end_date', payment.end_date)
+
+        payment.save()
+
+        serializer = MonthlyPaymentSerializer(payment)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class FeeStructureViewSet(viewsets.ModelViewSet):
+    queryset = FeeStructure.objects.all()
+    serializer_class = FeeStructureSerializer
+    pagination_class = None
+
+class ExpenseViewSet(viewsets.ModelViewSet):
+    queryset = Expense.objects.all()
+    serializer_class = ExpenseSerializer
+    pagination_class = None
+    
+    
+
+class TransactionViewSet(viewsets.ModelViewSet):
+    queryset = Transaction.objects.all()
+    serializer_class = TransactionSerializer
+    pagination_class = None
+    
+    filterset_fields = ['transaction_type', 'date']
+    
+    @action(detail=False, methods=['get'])
+    def generate_report(self, request):
+        report_type = request.query_params.get('report_type')
+        start_date = request.query_params.get('start_date')
+        end_date = request.query_params.get('end_date')
+
+        if not report_type or not start_date or not end_date:
+            return Response({"error": "report_type, start_date, and end_date are required"}, status=400)
+
+        try:
+            start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+            end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+        except ValueError:
+            return Response({"error": "Invalid date format. Use YYYY-MM-DD"}, status=400)
+
+        # Calculate total income (fee payments)
+        
+        total_income = Transaction.objects.filter(
+            transaction_type='Fee Payment',
+            date__range=[start_date, end_date]
+        ).aggregate(total_income=Sum('amount'))['total_income'] or 0
+
+        # Calculate total expenses (expense payments)
+        
+        total_expenses = Transaction.objects.filter(
+            transaction_type='Expense Payment',
+            date__range=[start_date, end_date]
+        ).aggregate(total_expenses=Sum('amount'))['total_expenses'] or 0
+         
+        # Create the financial report
+        report = FinancialReport.objects.create(
+            report_type=report_type,
+            start_date=start_date,
+            end_date=end_date,
+            total_income=total_income,
+            total_expenses=total_expenses
+        )
+
+        serializer = FinancialReportSerializer(report)
+        return Response(serializer.data)
+
+class FinancialReportViewSet(viewsets.ModelViewSet):
+    queryset = FinancialReport.objects.all()
+    serializer_class = FinancialReportSerializer
+    pagination_class = None
+    
+
+class StudentLightView(viewsets.ModelViewSet):
+    
+    queryset = Student.objects.all()
+    serializer_class = StudentLightSerializer
+    pagination_class = None
+    
+    def list(self, request):
+        school_id = request.query_params.get("school_id")
+
+        if not school_id:
+            return Response(
+                {"error": "Please provide a 'school_id' parameter."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            students = Student.objects.filter(classe__school=school_id)
+        except Student.DoesNotExist:
+            return Response(
+                {"error":  "Student with  does not exist."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        
+        serializer = StudentLightSerializer(students, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)

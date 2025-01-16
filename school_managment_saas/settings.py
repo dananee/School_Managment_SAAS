@@ -57,12 +57,10 @@ SECRET_KEY = os.environ.get(
 
 
 
-
-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 BACKEND_API_URL = "https://edugenius.tech"
-ALLOWED_HOSTS = ['195.7.4.12', '*']
+ALLOWED_HOSTS = ['37.60.228.93', 'edugenius.tech']
 
 CSRF_COOKIE_SECURE = True
 CSRF_COOKIE_HTTPONLY = True
@@ -70,7 +68,7 @@ SESSION_COOKIE_SECURE = True
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:8000",
-    "http://195.7.4.12",
+    "http://37.60.228.93",
     "https://edugenius.tech",
     "http://172.18.0.4:8000",
     "http://127.0.0.1:8000",
@@ -86,11 +84,11 @@ CSRF_TRUSTED_ORIGINS = [
     "http://localhost",
     "http://127.0.0.1",
     "https://edugenius.tech",
-    "http://195.7.4.12",
+    "http://37.60.228.93",
     "http://172.18.0.4:8000",
     "http://0.0.0.0:8000",
     "http://tauri.localhost",
-     "http://localhost:5050",  # The local server URL where Tauri runs
+    "http://localhost:5050",  # The local server URL where Tauri runs
     "http://127.0.0.1:5050",
 ]
 
@@ -200,10 +198,8 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "school_managment_saas.wsgi.application"
-ASGI_APPLICATION = "school_managment_saas.asgi.application"
-
-CHANNEL_LAYERS = {"default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}}
-
+ 
+ 
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
@@ -261,9 +257,10 @@ STATIC_URL = "/static/"
 # The directory where static files will be collected
 STATIC_ROOT =  BASE_DIR / "staticfiles"
 
-STATICFILES_DIRS = [
-    BASE_DIR / "static",  # Adjust this if your files are elsewhere
-]
+# STATICFILES_DIRS = [
+#     BASE_DIR / "staticfiles",  # Adjust this if your files are elsewhere
+    
+# ]
 
  
 COMPRESS_ROOT =  BASE_DIR / "staticfiles"

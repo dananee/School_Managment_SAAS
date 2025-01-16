@@ -10,6 +10,10 @@ from .views import (
     ClassViewSet,
     EventsView,
     ExamViewSet,
+    ExpenseViewSet,
+    FeeStructureViewSet,
+    FinancialReportViewSet,
+    MonthlyPaymentViewSet,
    
     MyTokenObtainPairView,
     NotificationView,
@@ -23,15 +27,18 @@ from .views import (
     StaffView,
     StudentByTeacherViewSet,
     ParentProfile,
+    StudentLightView,
     StudentViewSet,
     SubjectViewSet,
+    TeacherLightViewSet,
     TeacherScheduleViewSet,
     TeacherViewSet,
     StudentAttendance,
     HomeworkViewSet,
-
+PubView,
 NotificationViewSet,
-    ClassroomByTeacherViewSet
+    ClassroomByTeacherViewSet,
+    TransactionViewSet
 )
 
 
@@ -49,6 +56,7 @@ router.register(r"student_attend", StudentAttendance,
 router.register(r"homework", HomeworkViewSet, basename='homework')
 router.register(r"events", EventsView)
 router.register(r"teachers", TeacherViewSet)
+router.register(r"teachers-light", TeacherLightViewSet)
 router.register(r"student", StudentViewSet)
 router.register(r"parentp", ParentProfile)
 router.register(r"parent", ParentViewSet)
@@ -69,7 +77,14 @@ router.register(r"testudent", StudentByTeacherViewSet,
 router.register(r"classrooms-by-teacher",
                 ClassroomByTeacherViewSet, basename="filter-student")
 router.register(r'fcm-devices', NotificationViewSet, basename='fcmdevice')
+router.register(r'pubs', PubView, basename='publications')
 
+router.register(r'monthly-payments', MonthlyPaymentViewSet, basename='monthlypayment')
+router.register(r'fee-structures', FeeStructureViewSet)
+router.register(r'expenses', ExpenseViewSet)
+router.register(r'transactions', TransactionViewSet)
+router.register(r'financial-reports', FinancialReportViewSet)
+router.register(r'students-light', StudentLightView)
 
 urlpatterns = [
     # path('send-notification/', send_notification, name='send-notification'),
